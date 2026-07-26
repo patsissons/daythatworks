@@ -9,7 +9,8 @@ new Function('module', 'exports', code)(moduleRef, moduleRef.exports)
 const og = moduleRef.exports as {
   crc32: (bytes: Uint8Array, start: number, end: number) => number
   adler32: (bytes: Uint8Array) => number
-  encodePng: (width: number, height: number, rgb: Uint8Array) => Uint8Array
+  deflateFixed: (bytes: Uint8Array) => Uint8Array
+  encodePng: (width: number, height: number, gray: Uint8Array) => Uint8Array
   formatDay: (iso: string) => string
   buildCardData: (
     title: string,
@@ -35,29 +36,56 @@ describe('crc32 / adler32', () => {
   })
 })
 
+describe('deflateFixed', () => {
+  it('round-trips mixed literals and runs through real zlib inflate', () => {
+    const cases = [
+      new Uint8Array([1, 2, 3]),
+      new Uint8Array(1000).fill(42),
+      Uint8Array.from({ length: 5000 }, (_, i) =>
+        i % 37 === 0 ? 200 : Math.floor(i / 100),
+      ),
+      Uint8Array.from({ length: 600 }, (_, i) => (i * 7 + (i % 13)) % 256),
+    ]
+    for (const data of cases) {
+      const raw = inflateSync(
+        Buffer.concat([Buffer.from([0x78, 0x01]), og.deflateFixed(data)]),
+        // no adler trailer on the raw deflate stream
+        { finishFlush: 2 /* Z_SYNC_FLUSH */ },
+      )
+      expect(Buffer.from(data).equals(raw)).toBe(true)
+    }
+  })
+
+  it('compresses flat data massively', () => {
+    const flat = new Uint8Array(100_000).fill(10)
+    expect(og.deflateFixed(flat).length).toBeLessThan(1000)
+  })
+})
+
 describe('encodePng', () => {
-  it('produces a valid PNG that zlib can inflate back to the pixels', () => {
-    const width = 4
+  it('produces a valid grayscale PNG that zlib inflates back to the pixels', () => {
+    const width = 40
     const height = 3
-    const rgb = new Uint8Array(width * height * 3)
-    rgb.fill(7)
-    rgb[0] = 255 // distinguishable first pixel
-    const png = og.encodePng(width, height, rgb)
+    const gray = new Uint8Array(width * height)
+    gray.fill(7)
+    gray[0] = 255 // distinguishable first pixel
+    const png = og.encodePng(width, height, gray)
 
     expect([...png.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10])
-    // IHDR dims
     const view = new DataView(png.buffer, png.byteOffset)
     expect(view.getUint32(16)).toBe(width)
     expect(view.getUint32(20)).toBe(height)
+    expect(png[25]).toBe(0) // color type: grayscale
 
-    // IDAT payload inflates to filtered scanlines
+    // IDAT payload (a full zlib stream) inflates to filtered scanlines
     expect(new TextDecoder().decode(png.slice(37, 41))).toBe('IDAT')
     const idatLen = view.getUint32(33)
     const raw = inflateSync(png.slice(41, 41 + idatLen))
-    expect(raw.length).toBe(height * (1 + width * 3))
+    expect(raw.length).toBe(height * (1 + width))
     expect(raw[0]).toBe(0) // filter byte
     expect(raw[1]).toBe(255)
     expect(raw[2]).toBe(7)
+    expect(raw[1 + width]).toBe(0) // second row's filter byte
   })
 })
 

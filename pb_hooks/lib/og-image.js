@@ -6,16 +6,18 @@
 
 // Bump when the card layout/design changes: it feeds the og:image ?v cache
 // key so crawlers and edge caches refetch after a deploy.
-var CARD_VERSION = 2
+var CARD_VERSION = 3
 
 var WIDTH = 1200
 var HEIGHT = 630
 
-var COLOR_BG = [10, 10, 10]
-var COLOR_WHITE = [250, 250, 250]
-var COLOR_MUTED = [163, 163, 163]
-var COLOR_TRACK = [38, 38, 38]
-var COLOR_BORDER = [114, 114, 114]
+// The card is monochrome, so pixels are single grayscale bytes — a third of
+// the raw size of RGB, and PNG color type 0 encodes it directly.
+var COLOR_BG = 10
+var COLOR_WHITE = 250
+var COLOR_MUTED = 163
+var COLOR_TRACK = 38
+var COLOR_BORDER = 114
 
 // ---------------------------------------------------------------------------
 // PNG encoding
@@ -59,34 +61,97 @@ function writeUint32(bytes, offset, value) {
   bytes[offset + 3] = value & 0xff
 }
 
-/** Encode an RGB buffer (width*height*3) as a PNG. */
-function encodePng(width, height, rgb) {
-  // scanlines with filter byte 0
-  var stride = width * 3
-  var filtered = new Uint8Array(height * (stride + 1))
-  for (var y = 0; y < height; y++) {
-    var src = y * stride
-    filtered.set(rgb.subarray(src, src + stride), y * (stride + 1) + 1)
+// RFC 1951 length-code table for match lengths 3..258:
+// [firstLength, code, extraBits] per bucket.
+var LENGTH_CODES = [
+  [3, 257, 0], [4, 258, 0], [5, 259, 0], [6, 260, 0], [7, 261, 0],
+  [8, 262, 0], [9, 263, 0], [10, 264, 0], [11, 265, 1], [13, 266, 1],
+  [15, 267, 1], [17, 268, 1], [19, 269, 2], [23, 270, 2], [27, 271, 2],
+  [31, 272, 2], [35, 273, 3], [43, 274, 3], [51, 275, 3], [59, 276, 3],
+  [67, 277, 4], [83, 278, 4], [99, 279, 4], [115, 280, 4], [131, 281, 5],
+  [163, 282, 5], [195, 283, 5], [227, 284, 5], [258, 285, 0],
+]
+
+/**
+ * Fixed-Huffman deflate with distance-1 run matches — small and fast for
+ * images dominated by flat fills, and standard inflaters decode it fine.
+ */
+function deflateFixed(data) {
+  var out = []
+  var cur = 0
+  var nbits = 0
+  function putBits(value, count) {
+    cur |= value << nbits
+    nbits += count
+    while (nbits >= 8) {
+      out.push(cur & 0xff)
+      cur >>>= 8
+      nbits -= 8
+    }
+  }
+  function putCode(code, len) {
+    // huffman codes pack most-significant bit first
+    var rev = 0
+    for (var i = 0; i < len; i++) rev = (rev << 1) | ((code >> i) & 1)
+    putBits(rev, len)
+  }
+  function putLiteral(value) {
+    if (value <= 143) putCode(0x30 + value, 8)
+    else putCode(0x190 + (value - 144), 9)
+  }
+  function putLength(len) {
+    var bucket = LENGTH_CODES[0]
+    for (var i = 0; i < LENGTH_CODES.length; i++) {
+      if (LENGTH_CODES[i][0] > len) break
+      bucket = LENGTH_CODES[i]
+    }
+    var code = bucket[1]
+    if (code <= 279) putCode(code - 256, 7)
+    else putCode(0xc0 + (code - 280), 8)
+    if (bucket[2] > 0) putBits(len - bucket[0], bucket[2])
   }
 
-  // zlib stream: header + stored deflate blocks + adler
-  var blockCount = Math.ceil(filtered.length / 65535)
-  var zlib = new Uint8Array(2 + blockCount * 5 + filtered.length + 4)
+  putBits(1, 1) // BFINAL
+  putBits(1, 2) // BTYPE: fixed huffman
+  var i = 0
+  while (i < data.length) {
+    if (i > 0 && data[i] === data[i - 1]) {
+      var prev = data[i - 1]
+      var run = 0
+      while (run < 258 && i + run < data.length && data[i + run] === prev) {
+        run++
+      }
+      if (run >= 3) {
+        putLength(run)
+        putCode(0, 5) // distance code 0 = distance 1
+        i += run
+        continue
+      }
+    }
+    putLiteral(data[i])
+    i++
+  }
+  putCode(0, 7) // end of block (symbol 256)
+  if (nbits > 0) out.push(cur & 0xff)
+  return Uint8Array.from(out)
+}
+
+/** Encode a grayscale buffer (width*height, 1 byte/px) as a PNG. */
+function encodePng(width, height, gray) {
+  // scanlines with filter byte 0
+  var filtered = new Uint8Array(height * (width + 1))
+  for (var y = 0; y < height; y++) {
+    var src = y * width
+    filtered.set(gray.subarray(src, src + width), y * (width + 1) + 1)
+  }
+
+  // zlib stream: header + fixed-huffman deflate + adler
+  var deflated = deflateFixed(filtered)
+  var zlib = new Uint8Array(2 + deflated.length + 4)
   zlib[0] = 0x78
   zlib[1] = 0x01
-  var zpos = 2
-  for (var b = 0; b < blockCount; b++) {
-    var start = b * 65535
-    var len = Math.min(65535, filtered.length - start)
-    zlib[zpos] = b === blockCount - 1 ? 1 : 0
-    zlib[zpos + 1] = len & 0xff
-    zlib[zpos + 2] = (len >>> 8) & 0xff
-    zlib[zpos + 3] = ~len & 0xff
-    zlib[zpos + 4] = (~len >>> 8) & 0xff
-    zlib.set(filtered.subarray(start, start + len), zpos + 5)
-    zpos += 5 + len
-  }
-  writeUint32(zlib, zpos, adler32(filtered))
+  zlib.set(deflated, 2)
+  writeUint32(zlib, 2 + deflated.length, adler32(filtered))
 
   // chunks
   var png = new Uint8Array(8 + 25 + 12 + zlib.length + 12)
@@ -98,7 +163,7 @@ function encodePng(width, height, rgb) {
   writeUint32(png, p + 8, width)
   writeUint32(png, p + 12, height)
   png[p + 16] = 8 // bit depth
-  png[p + 17] = 2 // color type: truecolor
+  png[p + 17] = 0 // color type: grayscale
   writeUint32(png, p + 21, crc32(png, p + 4, p + 21))
   p += 25
   // IDAT
@@ -118,23 +183,17 @@ function encodePng(width, height, rgb) {
 // Drawing
 
 function makeCanvas() {
-  var data = new Uint8Array(WIDTH * HEIGHT * 3)
-  data.fill(COLOR_BG[0]) // bg is uniform gray so one fill covers all channels
+  var data = new Uint8Array(WIDTH * HEIGHT)
+  data.fill(COLOR_BG)
   return data
 }
 
-/** Horizontal span fill (solid color). */
+/** Horizontal span fill (solid gray value). */
 function span(data, y, x0, x1, color) {
   if (y < 0 || y >= HEIGHT) return
   if (x0 < 0) x0 = 0
   if (x1 > WIDTH) x1 = WIDTH
-  var p = (y * WIDTH + x0) * 3
-  for (var x = x0; x < x1; x++) {
-    data[p] = color[0]
-    data[p + 1] = color[1]
-    data[p + 2] = color[2]
-    p += 3
-  }
+  if (x1 > x0) data.fill(color, y * WIDTH + x0, y * WIDTH + x1)
 }
 
 function fillRoundRect(data, x, y, w, h, radius, color) {
@@ -212,12 +271,8 @@ function drawText(data, atlas, bin, text, x, y, color) {
         if (!alpha) continue
         var px = cursor + gx
         if (px < 0 || px >= WIDTH) continue
-        var p = (py * WIDTH + px) * 3
-        data[p] = (color[0] * alpha + data[p] * (255 - alpha) + 127) / 255
-        data[p + 1] =
-          (color[1] * alpha + data[p + 1] * (255 - alpha) + 127) / 255
-        data[p + 2] =
-          (color[2] * alpha + data[p + 2] * (255 - alpha) + 127) / 255
+        var p = py * WIDTH + px
+        data[p] = (color * alpha + data[p] * (255 - alpha) + 127) / 255
       }
     }
     cursor += glyph.width
@@ -449,6 +504,7 @@ function serveEventImage(e) {
 
 module.exports = {
   CARD_VERSION: CARD_VERSION,
+  deflateFixed: deflateFixed,
   crc32: crc32,
   adler32: adler32,
   encodePng: encodePng,
