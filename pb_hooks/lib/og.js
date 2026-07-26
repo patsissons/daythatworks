@@ -94,11 +94,11 @@ function serveEventPage(e) {
     var origin = scheme + '://' + host
 
     var stats = null
+    var cardVersion = 0
     try {
-      stats = require(__hooks + '/lib/og-image.js').loadEventCardData(
-        e.app,
-        event,
-      )
+      var ogImage = require(__hooks + '/lib/og-image.js')
+      cardVersion = ogImage.CARD_VERSION
+      stats = ogImage.loadEventCardData(e.app, event)
     } catch (err) {
       // stats are a nice-to-have; fall back to static copy
     }
@@ -127,7 +127,9 @@ function serveEventPage(e) {
         '/api/og/events/' +
         event.id +
         '.png' +
-        (stats ? '?v=' + stats.total + '-' + stats.bestCount : '')
+        (stats
+          ? '?v=' + cardVersion + '-' + stats.total + '-' + stats.bestCount
+          : '')
 
     html = injectMeta(html, {
       title: event.getString('title') + ' — Day that works',

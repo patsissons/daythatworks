@@ -4,6 +4,10 @@
 // into an RGB buffer, and the result is encoded as a PNG using zlib "stored"
 // deflate blocks with hand-rolled CRC32/Adler32.
 
+// Bump when the card layout/design changes: it feeds the og:image ?v cache
+// key so crawlers and edge caches refetch after a deploy.
+var CARD_VERSION = 2
+
 var WIDTH = 1200
 var HEIGHT = 630
 
@@ -444,6 +448,7 @@ function serveEventImage(e) {
 }
 
 module.exports = {
+  CARD_VERSION: CARD_VERSION,
   crc32: crc32,
   adler32: adler32,
   encodePng: encodePng,
