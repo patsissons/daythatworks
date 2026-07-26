@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { GithubIcon, GoogleIcon } from '@/components/BrandIcons'
 import { useAuth } from '@/lib/auth'
 import { usePageTitle } from '@/lib/title'
 
@@ -70,6 +71,7 @@ export function LoginPage() {
             disabled={busy}
             onClick={() => onOAuth('google')}
           >
+            <GoogleIcon className="size-4" />
             Continue with Google
           </Button>
           <Button
@@ -78,7 +80,8 @@ export function LoginPage() {
             disabled={busy}
             onClick={() => onOAuth('github')}
           >
-            Continue with Github
+            <GithubIcon className="size-4" />
+            Continue with GitHub
           </Button>
           {devAuthEnabled && (
             <Button
