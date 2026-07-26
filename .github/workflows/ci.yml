@@ -33,6 +33,18 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: npm install -g phio tsx
+      - name: Restore phio deploy key
+        # phio authenticates deploys with a persistent ed25519 keypair that
+        # must match the account key at pockethost.io/account/keys; fresh
+        # runners would otherwise generate a new, mismatched key every run.
+        run: |
+          mkdir -p ~/.config/phio-nodejs
+          printf '%s' "$PHIO_DEPLOY_KEY" | base64 -d > ~/.config/phio-nodejs/phio_deploy_ed25519
+          printf '%s' "$PHIO_DEPLOY_KEY_PUB" | base64 -d > ~/.config/phio-nodejs/phio_deploy_ed25519.pub
+          chmod 600 ~/.config/phio-nodejs/phio_deploy_ed25519
+        env:
+          PHIO_DEPLOY_KEY: ${{ secrets.PHIO_DEPLOY_KEY }}
+          PHIO_DEPLOY_KEY_PUB: ${{ secrets.PHIO_DEPLOY_KEY_PUB }}
       - run: phio deploy -v
         env:
           PHIO_USERNAME: ${{ secrets.PHIO_USERNAME }}
