@@ -35,7 +35,7 @@ function buildMeta(fields) {
   var lines = [
     '<title>' + title + '</title>',
     '<meta name="description" content="' + description + '" />',
-    '<meta property="og:site_name" content="daythatworks" />',
+    '<meta property="og:site_name" content="Day that works" />',
     '<meta property="og:type" content="website" />',
     '<meta property="og:title" content="' + title + '" />',
     '<meta property="og:description" content="' + description + '" />',
@@ -94,7 +94,7 @@ function serveEventPage(e) {
     var origin = scheme + '://' + host
     var image = event.getString('image')
     html = injectMeta(html, {
-      title: event.getString('title') + ' — daythatworks',
+      title: event.getString('title') + ' — Day that works',
       description:
         event.getString('description') ||
         'Pick the days that work for you and see which day fits the whole group.',

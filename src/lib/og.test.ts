@@ -22,7 +22,7 @@ const PAGE =
   '  </head>'
 
 const FIELDS = {
-  title: 'Summer BBQ — daythatworks',
+  title: 'Summer BBQ — Day that works',
   description: 'Bring snacks & drinks',
   url: 'https://daythatworks.com/events/summer-bbq',
   image: 'https://daythatworks.com/og.png',
@@ -52,9 +52,9 @@ describe('metaText', () => {
 describe('injectMeta', () => {
   it('replaces the marker block with event meta', () => {
     const out = og.injectMeta(PAGE, FIELDS)
-    expect(out).toContain('<title>Summer BBQ — daythatworks</title>')
+    expect(out).toContain('<title>Summer BBQ — Day that works</title>')
     expect(out).toContain(
-      '<meta property="og:title" content="Summer BBQ — daythatworks" />',
+      '<meta property="og:title" content="Summer BBQ — Day that works" />',
     )
     expect(out).toContain(
       '<meta property="og:description" content="Bring snacks &amp; drinks" />',
