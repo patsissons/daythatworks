@@ -12,6 +12,7 @@ import { pb } from '@/lib/pocketbase'
 interface AuthContextValue {
   user: AuthRecord | null
   loginWithOAuth: (provider: string) => Promise<void>
+  loginWithDev: () => Promise<void>
   logout: () => void
 }
 
@@ -30,6 +31,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await pb.collection('users').authWithOAuth2({ provider })
   }, [])
 
+  const loginWithDev = useCallback(async () => {
+    const res = await pb.send<{ token: string; record: AuthRecord }>(
+      '/api/dev-login',
+      { method: 'POST' },
+    )
+    pb.authStore.save(res.token, res.record)
+  }, [])
+
   const logout = useCallback(() => {
     pb.authStore.clear()
   }, [])
@@ -39,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loginWithOAuth,
+        loginWithDev,
         logout,
       }}
     >

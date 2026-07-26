@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,11 +10,17 @@ import {
 } from '@/components/ui/card'
 import { useAuth } from '@/lib/auth'
 
+const devAuthEnabled =
+  import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH === 'true'
+
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const auth = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const from = (location.state as { from?: string } | null)?.from ?? '/'
 
   async function guard(action: () => Promise<void>) {
     setBusy(true)
@@ -30,9 +36,20 @@ export function LoginPage() {
     await guard(async () => {
       try {
         await auth.loginWithOAuth(provider)
-        navigate('/')
+        navigate(from, { replace: true })
       } catch {
         setError(`Could not sign in with ${provider}.`)
+      }
+    })
+  }
+
+  async function onDevLogin() {
+    await guard(async () => {
+      try {
+        await auth.loginWithDev()
+        navigate(from, { replace: true })
+      } catch {
+        setError('Dev login failed — is DEV_AUTH=true set on pocketbase?')
       }
     })
   }
@@ -61,6 +78,16 @@ export function LoginPage() {
           >
             Continue with Github
           </Button>
+          {devAuthEnabled && (
+            <Button
+              variant="secondary"
+              className="w-full"
+              disabled={busy}
+              onClick={onDevLogin}
+            >
+              Dev login
+            </Button>
+          )}
           {error && <p className="text-destructive text-sm">{error}</p>}
         </CardContent>
       </Card>
