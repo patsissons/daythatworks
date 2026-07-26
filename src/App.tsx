@@ -4,8 +4,10 @@ import { RequireAuth } from '@/components/RequireAuth'
 import { HomePage } from '@/pages/HomePage'
 import { AuthProvider } from '@/lib/auth'
 import { LoginPage } from '@/pages/LoginPage'
+import { EditEventPage } from '@/pages/EditEventPage'
 import { EventPage } from '@/pages/EventPage'
 import { NewEventPage } from '@/pages/NewEventPage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
 
 export default function App() {
   return (
@@ -27,6 +29,15 @@ export default function App() {
             path="events/:idOrSlug/s/:submissionId"
             element={<EventPage />}
           />
+          <Route
+            path="events/:idOrSlug/edit"
+            element={
+              <RequireAuth>
+                <EditEventPage />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </AuthProvider>

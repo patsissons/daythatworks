@@ -1,84 +1,182 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { CalendarPlus, Link2, Trophy } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useAuth } from '@/lib/auth'
+import { eventPath } from '@/lib/events'
+import { formatDisplayDate } from '@/lib/dates'
 import { logger } from '@/lib/logger'
 import { pb } from '@/lib/pocketbase'
-import type { PostsRecord } from '@/lib/pocketbase-types'
+import type { EventsRecord, SubmissionsRecord } from '@/lib/pocketbase-types'
 
-type PostsState =
+const HOW_IT_WORKS = [
+  {
+    icon: CalendarPlus,
+    title: 'Propose some days',
+    text: 'Create an event and pick every date that could work.',
+  },
+  {
+    icon: Link2,
+    title: 'Share one link',
+    text: 'Send the permalink — everyone marks the days they can make.',
+  },
+  {
+    icon: Trophy,
+    title: 'See the best day',
+    text: 'Counts roll up live and the day that works is recommended.',
+  },
+]
+
+type MineState =
   | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'ready'; posts: PostsRecord[] }
+  | { status: 'error' }
+  | {
+      status: 'ready'
+      events: EventsRecord[]
+      responses: SubmissionsRecord[]
+    }
 
 export function HomePage() {
-  const [state, setState] = useState<PostsState>({ status: 'loading' })
+  const { user } = useAuth()
+
+  return (
+    <div className="space-y-12">
+      <section className="mx-auto max-w-2xl space-y-4 pt-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          Find a day that works
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Propose dates, share a link, and see which day fits your whole group —
+          no accounts required to look, no back-and-forth to decide.
+        </p>
+        <Button asChild size="lg">
+          <Link to="/events/new">
+            <CalendarPlus />
+            Create an event
+          </Link>
+        </Button>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        {HOW_IT_WORKS.map(({ icon: Icon, title, text }) => (
+          <Card key={title}>
+            <CardHeader>
+              <Icon className="text-primary size-6" aria-hidden />
+              <CardTitle className="text-base">{title}</CardTitle>
+              <CardDescription>{text}</CardDescription>
+            </CardHeader>
+          </Card>
+        ))}
+      </section>
+
+      {user && <YourStuff userId={user.id} />}
+    </div>
+  )
+}
+
+function YourStuff({ userId }: { userId: string }) {
+  const [state, setState] = useState<MineState>({ status: 'loading' })
 
   useEffect(() => {
     let cancelled = false
-    pb.collection('posts')
-      .getFullList<PostsRecord>({ sort: '-created' })
-      .then((posts) => {
-        if (!cancelled) setState({ status: 'ready', posts })
+    Promise.all([
+      pb.collection('events').getFullList<EventsRecord>({
+        filter: pb.filter('creator = {:userId}', { userId }),
+        sort: '-created',
+      }),
+      pb.collection('submissions').getFullList<SubmissionsRecord>({
+        filter: pb.filter('submitter = {:userId}', { userId }),
+        sort: '-created',
+        expand: 'event',
+      }),
+    ])
+      .then(([events, responses]) => {
+        if (!cancelled) setState({ status: 'ready', events, responses })
       })
       .catch((error: unknown) => {
-        logger.error('failed to load posts', error)
-        if (!cancelled) {
-          setState({
-            status: 'error',
-            message:
-              'Could not reach PocketBase. Check VITE_POCKETBASE_URL in your .env.',
-          })
-        }
+        logger.error('failed to load your events', error)
+        if (!cancelled) setState({ status: 'error' })
       })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [userId])
+
+  if (state.status === 'loading') {
+    return <p className="text-muted-foreground">Loading your events…</p>
+  }
+  if (state.status === 'error') {
+    return (
+      <p className="text-muted-foreground">
+        Could not load your events right now.
+      </p>
+    )
+  }
+
+  const { events, responses } = state
+  const respondedElsewhere = responses.filter(
+    (response) => response.expand?.event?.creator !== userId,
+  )
+
+  if (events.length === 0 && respondedElsewhere.length === 0) return null
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">daythatworks</h1>
-        <p className="text-muted-foreground mt-1">
-          Your PocketHost-backed app shell is running. Start building!
-        </p>
-      </div>
-
-      {state.status === 'loading' && (
-        <p className="text-muted-foreground">Loading posts…</p>
-      )}
-
-      {state.status === 'error' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Backend unreachable</CardTitle>
-            <CardDescription>{state.message}</CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
-      {state.status === 'ready' && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {state.posts.map((post) => (
-            <Card key={post.id}>
-              <CardHeader>
-                <CardTitle>{post.title}</CardTitle>
-                <CardDescription>
-                  {new Date(post.created).toLocaleDateString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">{post.body}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+    <div className="grid gap-8 sm:grid-cols-2">
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Your events</h2>
+        {events.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            You haven&apos;t created any events yet.
+          </p>
+        ) : (
+          events.map((event) => (
+            <Link key={event.id} to={eventPath(event)} className="block">
+              <Card className="hover:bg-accent/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-base">{event.title}</CardTitle>
+                  <CardDescription>
+                    {event.dates.length} candidate days ·{' '}
+                    {formatDisplayDate(event.dates[0])} –{' '}
+                    {formatDisplayDate(event.dates[event.dates.length - 1])}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))
+        )}
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Your responses</h2>
+        {respondedElsewhere.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            You haven&apos;t responded to anyone else&apos;s event yet.
+          </p>
+        ) : (
+          respondedElsewhere.map((response) => {
+            const event = response.expand?.event
+            if (!event) return null
+            return (
+              <Link key={response.id} to={eventPath(event)} className="block">
+                <Card className="hover:bg-accent/50 transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-base">{event.title}</CardTitle>
+                    <CardDescription>
+                      {(response.dates ?? []).length} of {event.dates.length}{' '}
+                      days work for you
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            )
+          })
+        )}
+      </section>
     </div>
   )
 }
