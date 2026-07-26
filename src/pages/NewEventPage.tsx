@@ -4,9 +4,11 @@ import { newId } from '@/lib/id'
 import { eventPath } from '@/lib/events'
 import { pb } from '@/lib/pocketbase'
 import type { EventsRecord } from '@/lib/pocketbase-types'
+import { usePageTitle } from '@/lib/title'
 
 export function NewEventPage() {
   const navigate = useNavigate()
+  usePageTitle('New event')
 
   return (
     <div className="mx-auto max-w-xl space-y-6">

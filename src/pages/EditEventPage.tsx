@@ -18,6 +18,7 @@ import {
 import { logger } from '@/lib/logger'
 import { pb } from '@/lib/pocketbase'
 import type { EventsRecord, SubmissionsRecord } from '@/lib/pocketbase-types'
+import { usePageTitle } from '@/lib/title'
 
 type EditState =
   | { status: 'loading' }
@@ -33,6 +34,7 @@ export function EditEventPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [state, setState] = useState<EditState>({ status: 'loading' })
+  usePageTitle('Edit event')
 
   const load = useCallback(() => {
     return getEventByIdOrSlug(idOrSlug)

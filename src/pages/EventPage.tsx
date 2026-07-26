@@ -24,6 +24,7 @@ import {
 import { newId } from '@/lib/id'
 import { logger } from '@/lib/logger'
 import { pb } from '@/lib/pocketbase'
+import { usePageTitle } from '@/lib/title'
 import type { EventsRecord, SubmissionsRecord } from '@/lib/pocketbase-types'
 
 type EventState =
@@ -57,6 +58,7 @@ function EventContent({
 }) {
   const { user } = useAuth()
   const [state, setState] = useState<EventState>({ status: 'loading' })
+  usePageTitle(state.status === 'ready' ? state.event.title : undefined)
 
   const load = useCallback(() => {
     return getEventByIdOrSlug(idOrSlug)

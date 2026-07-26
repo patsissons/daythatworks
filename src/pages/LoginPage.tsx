@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { useAuth } from '@/lib/auth'
+import { usePageTitle } from '@/lib/title'
 
 const devAuthEnabled =
   import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH === 'true'
@@ -19,6 +20,7 @@ export function LoginPage() {
   const auth = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  usePageTitle('Log in')
 
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
