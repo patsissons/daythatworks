@@ -10,7 +10,7 @@ export function Layout() {
       <header className="border-b">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
           <Link to="/" className="font-semibold">
-            daythatworks
+            Day that works
           </Link>
           <nav className="flex items-center gap-2">
             {user ? (

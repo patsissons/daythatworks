@@ -61,7 +61,7 @@ export function LoginPage() {
       <Card>
         <CardHeader>
           <CardTitle>Log in</CardTitle>
-          <CardDescription>Welcome back to daythatworks</CardDescription>
+          <CardDescription>Welcome back to Day that works</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
