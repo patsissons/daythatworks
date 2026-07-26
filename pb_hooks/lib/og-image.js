@@ -324,7 +324,7 @@ function renderEventCard(assets, card) {
   )
   drawText(data, regular36, binR36, card.subtitle, 80, 242, COLOR_MUTED)
 
-  var rowY = 340
+  var rowY = 322
   for (var i = 0; i < card.rows.length; i++) {
     var row = card.rows[i]
     drawText(data, bold36, bin36, row.label, 80, rowY, COLOR_WHITE)
@@ -354,7 +354,7 @@ function renderEventCard(assets, card) {
       )
       drawText(data, bold36, bin36, badgeText, badgeX + 24, rowY - 1, COLOR_WHITE)
     }
-    rowY += 88
+    rowY += 76
   }
 
   if (card.moreDays > 0) {
@@ -364,7 +364,7 @@ function renderEventCard(assets, card) {
       binR36,
       '+ ' + card.moreDays + ' more ' + (card.moreDays === 1 ? 'day' : 'days'),
       80,
-      rowY + 2,
+      rowY,
       COLOR_MUTED,
     )
   }
