@@ -9,8 +9,11 @@ Creating an event or responding requires signing in (Google/GitHub OAuth);
 viewing needs no account. An event can hide responder names from the group,
 and emails are never exposed through the public API.
 
+Live at [https://daythatworks.com](https://daythatworks.com).
+
 - Frontend: Vite + React + Tailwind CSS + shadcn/ui
-- Backend: [PocketBase](https://pocketbase.io/) hosted on PocketHost (`https://daythatworks.pockethost.io`)
+- Backend: [PocketBase](https://pocketbase.io/) hosted on PocketHost (`https://daythatworks.pockethost.io`, served on the custom domain `daythatworks.com`)
+- OAuth callback URL for provider consoles: `https://daythatworks.com/api/oauth2-redirect` (GitHub allows a single callback URL — it must be the custom domain)
 
 ## Setup
 
@@ -82,7 +85,7 @@ pnpm build
 phio deploy
 ```
 
-Your app is deployed at [https://daythatworks.pockethost.io](https://daythatworks.pockethost.io).
+Your app is deployed at [https://daythatworks.com](https://daythatworks.com) (instance URL: [https://daythatworks.pockethost.io](https://daythatworks.pockethost.io)).
 
 ## Schema & types
 
