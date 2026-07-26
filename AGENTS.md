@@ -36,4 +36,10 @@ phio is the PocketHost CLI (`npm install -g phio tsx`; requires Node 24+ — phi
 ## Constraints
 
 - PocketHost serves only static files (`pb_public/`), hooks (`pb_hooks/`), and migrations (`pb_migrations/`) — no custom server processes. Don't add SSR or API routes that assume a Node server.
-- `pb_hooks/` runs in PocketBase's JSVM (ES5-ish + PocketBase globals, no npm imports). Keep hooks dependency-free.
+- `pb_hooks/` runs in PocketBase's JSVM (ES5-ish + PocketBase globals, no npm imports). Keep hooks dependency-free. Handler callbacks cannot close over top-level file scope — shared helpers live in `pb_hooks/lib/*.js` and are `require()`d inside each handler.
+
+## App invariants
+
+- `events` and `submissions` use client-supplied 26-char lowercased ULID ids (`newId()` in `src/lib/id.ts`); event slugs are optional and unique only among non-empty values.
+- `pb_hooks/records.pb.js` is the source of truth for write-time validation (≥2 valid dates per event, submission dates ⊆ event dates), stamps `creator*`/`submitter*` fields from the authenticated user, and hides emails (and names on `hideNames` events) from other users via `onRecordEnrich`. Don't rely on client-sent identity fields.
+- Local development runs a local `pocketbase serve` with the dev-only `/api/dev-login` route (`DEV_AUTH=true` + `DEV_AUTH_NAME`/`DEV_AUTH_EMAIL` env; `VITE_DEV_AUTH=true` shows the button). Never enable `DEV_AUTH` on PocketHost.

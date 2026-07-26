@@ -1,6 +1,13 @@
 # daythatworks
 
-A [PocketHost](https://pockethost.io/)-backed web app scaffolded with `ph create`.
+Find a day that works for your whole group: create an event with candidate
+dates, share the permalink, and everyone marks which days they can make.
+Results roll up per date with a best-day recommendation. Events live at
+`/events/<slug-or-id>` (ULID ids, optional unique vanity slugs) and each
+response has its own permalink at `/events/<slug-or-id>/s/<submission-id>`.
+Creating an event or responding requires signing in (Google/GitHub OAuth);
+viewing needs no account. An event can hide responder names from the group,
+and emails are never exposed through the public API.
 
 - Frontend: Vite + React + Tailwind CSS + shadcn/ui
 - Backend: [PocketBase](https://pocketbase.io/) hosted on PocketHost (`https://daythatworks.pockethost.io`)
@@ -32,6 +39,39 @@ pnpm dev
 ```
 
 The dev server talks to the PocketBase URL in your `.env`. Backend files (`pb_migrations/`, `pb_hooks/`) sync to your instance with `phio dev` (watch mode).
+
+### Local backend with fake OAuth (recommended)
+
+Real OAuth is awkward in local development, so the app ships a dev-only fake
+login. Download the [PocketBase binary](https://pocketbase.io/docs/) and run it
+from the repo root (it auto-discovers `pb_hooks/` and `pb_migrations/`, and
+applies migrations on startup):
+
+```sh
+DEV_AUTH=true DEV_AUTH_NAME='Dev User' DEV_AUTH_EMAIL=dev@local.test ./pocketbase serve
+```
+
+Then point the frontend at it in `.env`:
+
+```
+VITE_POCKETBASE_URL=http://127.0.0.1:8090
+VITE_DEV_AUTH=true
+```
+
+`pnpm dev` now shows a **Dev login** button on the login page that
+authenticates as the configured user (created on first use) via the
+`/api/dev-login` route in `pb_hooks/dev-auth.pb.js`. The route only exists
+when `DEV_AUTH=true` is set on the PocketBase process — never set it on
+PocketHost. To act as a second group member, restart PocketBase with a
+different `DEV_AUTH_EMAIL`/`DEV_AUTH_NAME`.
+
+With a local backend running you can also exercise the full end-to-end flow in
+Playwright:
+
+```sh
+E2E_PB_URL=http://127.0.0.1:8090 VITE_POCKETBASE_URL=http://127.0.0.1:8090 \
+  VITE_DEV_AUTH=true pnpm test:e2e
+```
 
 ## Deployment
 
