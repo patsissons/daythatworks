@@ -11,3 +11,9 @@ routerAdd('GET', '/events/{idOrSlug}', (e) => {
 routerAdd('GET', '/events/{idOrSlug}/s/{submissionId}', (e) => {
   return require(`${__hooks}/lib/og.js`).serveEventPage(e)
 })
+
+// Live stats card (PNG) used as the og:image for events without an uploaded
+// image. The {id} segment may carry a .png suffix for crawler friendliness.
+routerAdd('GET', '/api/og/events/{id}', (e) => {
+  return require(`${__hooks}/lib/og-image.js`).serveEventImage(e)
+})

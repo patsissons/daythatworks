@@ -92,16 +92,48 @@ function serveEventPage(e) {
         ? 'http'
         : 'https'
     var origin = scheme + '://' + host
+
+    var stats = null
+    try {
+      stats = require(__hooks + '/lib/og-image.js').loadEventCardData(
+        e.app,
+        event,
+      )
+    } catch (err) {
+      // stats are a nice-to-have; fall back to static copy
+    }
+
+    var description =
+      event.getString('description') ||
+      'Pick the days that work for you and see which day fits the whole group.'
+    if (stats && stats.total > 0 && stats.bestLabel) {
+      description =
+        'Best day so far: ' +
+        stats.bestLabel +
+        ' — ' +
+        stats.bestCount +
+        ' of ' +
+        stats.total +
+        ' available. ' +
+        description
+    }
+
+    // uploaded event image wins; otherwise a live stats card (?v busts
+    // crawler caches as responses come in)
     var image = event.getString('image')
+    var imageUrl = image
+      ? origin + '/api/files/events/' + event.id + '/' + image
+      : origin +
+        '/api/og/events/' +
+        event.id +
+        '.png' +
+        (stats ? '?v=' + stats.total + '-' + stats.bestCount : '')
+
     html = injectMeta(html, {
       title: event.getString('title') + ' — Day that works',
-      description:
-        event.getString('description') ||
-        'Pick the days that work for you and see which day fits the whole group.',
+      description: description,
       url: origin + '/events/' + (event.getString('slug') || event.id),
-      image: image
-        ? origin + '/api/files/events/' + event.id + '/' + image
-        : origin + '/og.png',
+      image: imageUrl,
       imageIsDefault: !image,
     })
   }
