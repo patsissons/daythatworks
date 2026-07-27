@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { AvailabilityResults } from '@/components/AvailabilityResults'
 import { aggregateAvailability } from '@/lib/availability'
@@ -65,13 +65,22 @@ describe('AvailabilityResults', () => {
     expect(screen.getAllByText('AL').length).toBeGreaterThan(0)
   })
 
-  it('reveals the full name in a popover on click', async () => {
+  it('reveals the full name in a popover on hover', async () => {
     renderResults()
-    fireEvent.click(screen.getAllByRole('button', { name: 'Grace Hopper' })[0])
+    const chip = screen.getAllByRole('button', { name: 'Grace Hopper' })[0]
+    fireEvent.mouseEnter(chip)
     const popover = await screen.findByText('Grace Hopper', {
       selector: '[data-slot="popover-content"]',
     })
     expect(popover).toBeInTheDocument()
+    fireEvent.mouseLeave(chip)
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Grace Hopper', {
+          selector: '[data-slot="popover-content"]',
+        }),
+      ).not.toBeInTheDocument(),
+    )
   })
 
   it('hides the chip rows entirely when all names are hidden', () => {
