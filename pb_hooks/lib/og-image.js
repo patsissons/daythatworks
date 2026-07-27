@@ -6,7 +6,7 @@
 
 // Bump when the card layout/design changes: it feeds the og:image ?v cache
 // key so crawlers and edge caches refetch after a deploy.
-var CARD_VERSION = 3
+var CARD_VERSION = 4
 
 var WIDTH = 1200
 var HEIGHT = 630
@@ -396,22 +396,22 @@ function renderEventCard(assets, card) {
     var countText = row.count + '/' + card.total
     drawText(data, regular36, binR36, countText, 758, rowY, COLOR_MUTED)
     if (row.best) {
+      // filled inverted pill so the winner pops on the mono card
       var badgeText = '★ Best day'
       var badgeTextWidth = measureText(bold36, badgeText)
       var badgeX = 1120 - (badgeTextWidth + 48)
       var badgeY = rowY - 6
       var badgeH = bold36.height + 10
-      strokeRoundRect(
+      fillRoundRect(
         data,
         badgeX,
         badgeY,
         badgeTextWidth + 48,
         badgeH,
         Math.floor(badgeH / 2),
-        2,
-        COLOR_BORDER,
+        COLOR_WHITE,
       )
-      drawText(data, bold36, bin36, badgeText, badgeX + 24, rowY - 1, COLOR_WHITE)
+      drawText(data, bold36, bin36, badgeText, badgeX + 24, rowY - 1, COLOR_BG)
     }
     rowY += 76
   }

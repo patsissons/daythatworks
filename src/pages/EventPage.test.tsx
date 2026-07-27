@@ -190,7 +190,9 @@ describe('EventPage', () => {
     )
     renderPage()
     await screen.findByText('Summer BBQ')
-    expect(screen.queryByTitle('Hidden')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Name hidden' }),
+    ).not.toBeInTheDocument()
     expect(screen.getByText('2/2')).toBeInTheDocument()
   })
 })

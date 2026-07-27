@@ -61,7 +61,7 @@ export function AvailabilityResults({
               key={date}
               className={cn(
                 'rounded-lg border p-3',
-                isBest && 'border-primary/40',
+                isBest && 'border-amber-400/60 bg-amber-400/5',
                 hasFocused && 'ring-ring/40 ring-2',
               )}
             >
@@ -82,7 +82,7 @@ export function AvailabilityResults({
                   {count}/{result.totalSubmissions}
                 </span>
                 {isBest && (
-                  <span className="border-primary/40 text-primary inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-semibold text-amber-950 shadow-sm ring-1 ring-amber-500/60">
                     <Trophy className="size-3" aria-hidden />
                     Best day
                   </span>

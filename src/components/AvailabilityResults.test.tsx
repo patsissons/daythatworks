@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { AvailabilityResults } from '@/components/AvailabilityResults'
 import { aggregateAvailability } from '@/lib/availability'
@@ -59,8 +59,19 @@ describe('AvailabilityResults', () => {
 
   it('shows member initials when names are visible', () => {
     renderResults()
-    expect(screen.getAllByTitle('Ada Lovelace').length).toBeGreaterThan(0)
+    expect(
+      screen.getAllByRole('button', { name: 'Ada Lovelace' }).length,
+    ).toBeGreaterThan(0)
     expect(screen.getAllByText('AL').length).toBeGreaterThan(0)
+  })
+
+  it('reveals the full name in a popover on click', async () => {
+    renderResults()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Grace Hopper' })[0])
+    const popover = await screen.findByText('Grace Hopper', {
+      selector: '[data-slot="popover-content"]',
+    })
+    expect(popover).toBeInTheDocument()
   })
 
   it('hides the chip rows entirely when all names are hidden', () => {
@@ -68,6 +79,8 @@ describe('AvailabilityResults', () => {
       { id: 's1', submitterName: '', dates: ['2026-08-01'] },
       { id: 's2', submitterName: '', dates: ['2026-08-02'] },
     ])
-    expect(screen.queryByTitle('Hidden')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Name hidden' }),
+    ).not.toBeInTheDocument()
   })
 })
