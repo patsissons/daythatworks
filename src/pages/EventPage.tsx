@@ -5,6 +5,8 @@ import { AvailabilityResults } from '@/components/AvailabilityResults'
 import { CopyLinkButton } from '@/components/CopyLinkButton'
 import { DateToggleChips } from '@/components/DateToggleChips'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
@@ -196,39 +198,34 @@ function RespondSection({
   submissions: SubmissionsRecord[]
   onSaved: () => Promise<void>
 }) {
-  const { user } = useAuth()
+  const { user, isGuest, loginAsGuest } = useAuth()
   const mine = submissions.find(
     (submission) => submission.submitter === user?.id,
   )
   const [selected, setSelected] = useState<string[]>(mine?.dates ?? [])
+  const [name, setName] = useState<string>(
+    user && isGuest ? ((user.name as string) ?? '') : '',
+  )
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [savedId, setSavedId] = useState<string | null>(null)
 
-  if (!user) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Your availability</CardTitle>
-          <CardDescription>
-            Sign in to say which days work for you.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild>
-            <Link to="/login" state={{ from: eventPath(event) }}>
-              Sign in to respond
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
+  const needsName = !user || isGuest
 
   async function save() {
+    if (needsName && !name.trim()) {
+      setError('Enter your name so the group knows who responded.')
+      return
+    }
     setBusy(true)
     setError(null)
     try {
+      if (!user) {
+        // first-time guest: mint the persistent guest identity, then submit
+        await loginAsGuest(name.trim())
+      } else if (isGuest && name.trim() && name.trim() !== user.name) {
+        await pb.collection('users').update(user.id, { name: name.trim() })
+      }
       let id = mine?.id
       if (mine) {
         await pb
@@ -259,9 +256,23 @@ function RespondSection({
         <CardDescription>
           Tap every day that works for you — unselected days count as
           unavailable.
+          {!user && ' No account needed — just your name.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {needsName && (
+          <div className="max-w-60 space-y-2">
+            <Label htmlFor="responder-name">Your name</Label>
+            <Input
+              id="responder-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Alex"
+              maxLength={100}
+              disabled={busy}
+            />
+          </div>
+        )}
         <DateToggleChips
           dates={event.dates}
           selected={selected}
@@ -279,6 +290,18 @@ function RespondSection({
             />
           )}
         </div>
+        {!user && (
+          <p className="text-muted-foreground text-sm">
+            Have an account?{' '}
+            <Link
+              to="/login"
+              state={{ from: eventPath(event) }}
+              className="underline underline-offset-2"
+            >
+              Sign in instead
+            </Link>
+          </p>
+        )}
         {error && <p className="text-destructive text-sm">{error}</p>}
       </CardContent>
     </Card>

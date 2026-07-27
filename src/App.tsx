@@ -19,7 +19,7 @@ export default function App() {
           <Route
             path="events/new"
             element={
-              <RequireAuth>
+              <RequireAuth full>
                 <NewEventPage />
               </RequireAuth>
             }

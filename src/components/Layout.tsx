@@ -3,7 +3,21 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth'
 
 export function Layout() {
-  const { user, logout } = useAuth()
+  const { user, isGuest, logout } = useAuth()
+
+  function onLogout() {
+    if (
+      isGuest &&
+      !window.confirm(
+        'You are participating as a guest. Logging out discards your guest ' +
+          'identity, so you will no longer be able to edit your responses. ' +
+          'Log out anyway?',
+      )
+    ) {
+      return
+    }
+    logout()
+  }
 
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col">
@@ -16,9 +30,14 @@ export function Layout() {
             {user ? (
               <>
                 <span className="text-muted-foreground text-sm">
-                  {user.email}
+                  {user.name || user.email}
+                  {isGuest && (
+                    <span className="bg-secondary text-secondary-foreground ml-1.5 rounded-full border px-2 py-0.5 text-xs">
+                      guest
+                    </span>
+                  )}
                 </span>
-                <Button variant="outline" size="sm" onClick={logout}>
+                <Button variant="outline" size="sm" onClick={onLogout}>
                   Log out
                 </Button>
               </>

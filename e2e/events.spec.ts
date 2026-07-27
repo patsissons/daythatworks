@@ -59,3 +59,41 @@ test('create an event and respond to it', async ({ page }) => {
   // update the response: also select the second day
   await page.getByRole('button', { name: 'Update availability' }).isVisible()
 })
+
+test('respond as a guest without an account', async ({ page }) => {
+  test.skip(!process.env.E2E_PB_URL, 'needs a local PocketBase (E2E_PB_URL)')
+
+  // organizer creates an event
+  await page.goto('/login')
+  await page.getByRole('button', { name: 'Dev login' }).click()
+  await page.goto('/events/new')
+  await page.getByLabel('Title').fill(`Guest E2E ${Date.now()}`)
+  await page.getByRole('button', { name: 'Next month' }).click()
+  const days = page.locator('button[aria-label^="20"]:not([disabled])')
+  await days.nth(0).click()
+  await days.nth(1).click()
+  await page.getByRole('button', { name: 'Create event' }).click()
+  await expect(page.getByText(/No responses yet/)).toBeVisible()
+
+  // a different person with no account opens the link
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.getByLabel('Your name').fill('E2E Guest')
+  await page
+    .locator('button[aria-pressed]')
+    .filter({ hasText: /, / })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Save availability' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Update availability' }),
+  ).toBeVisible()
+
+  // the guest identity persists across reloads and shows in the header
+  await page.reload()
+  await expect(
+    page.getByRole('button', { name: 'Update availability' }),
+  ).toBeVisible()
+  await expect(page.getByText(/E2E Guest/).first()).toBeVisible()
+  await expect(page.getByText('guest', { exact: true })).toBeVisible()
+})

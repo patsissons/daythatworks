@@ -47,6 +47,7 @@ const getFirstListItem = vi.fn()
 const getFullList = vi.fn()
 const create = vi.fn()
 const update = vi.fn()
+const loginAsGuest = vi.fn()
 let mockUser: AuthRecord | null = null
 
 vi.mock('@/lib/pocketbase', () => ({
@@ -61,7 +62,11 @@ vi.mock('@/lib/pocketbase', () => ({
 }))
 
 vi.mock('@/lib/auth', () => ({
-  useAuth: () => ({ user: mockUser }),
+  useAuth: () => ({
+    user: mockUser,
+    isGuest: mockUser?.guest === true,
+    loginAsGuest,
+  }),
 }))
 
 function renderPage(path = '/events/summer-bbq') {
@@ -98,11 +103,37 @@ describe('EventPage', () => {
     expect(screen.getByText(/Organized by Ada Lovelace/)).toBeInTheDocument()
   })
 
-  it('shows a sign-in prompt when signed out', async () => {
+  it('offers guest responses with a name field when signed out', async () => {
     renderPage()
+    expect(await screen.findByLabelText('Your name')).toBeInTheDocument()
     expect(
-      await screen.findByRole('link', { name: 'Sign in to respond' }),
+      screen.getByRole('link', { name: 'Sign in instead' }),
     ).toBeInTheDocument()
+  })
+
+  it('requires a name before saving as guest', async () => {
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    expect(await screen.findByText(/Enter your name/)).toBeInTheDocument()
+    expect(loginAsGuest).not.toHaveBeenCalled()
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it('creates a guest identity and submits in one save', async () => {
+    loginAsGuest.mockResolvedValue(undefined)
+    create.mockResolvedValue({})
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    fireEvent.change(screen.getByLabelText('Your name'), {
+      target: { value: 'Guest Gal' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Sat, Aug 1/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(loginAsGuest).toHaveBeenCalledWith('Guest Gal')
+    const payload = create.mock.calls[0][0] as Record<string, string>
+    expect(JSON.parse(payload.dates)).toEqual(['2026-08-01'])
   })
 
   it('shows a not-found card for unknown events', async () => {
