@@ -65,21 +65,44 @@ describe('AvailabilityResults', () => {
     expect(screen.getAllByText('AL').length).toBeGreaterThan(0)
   })
 
-  it('reveals the full name in a popover on hover', async () => {
-    renderResults()
-    const chip = screen.getAllByRole('button', { name: 'Grace Hopper' })[0]
-    fireEvent.mouseEnter(chip)
-    const popover = await screen.findByText('Grace Hopper', {
+  function popoverText(name: string) {
+    return screen.queryByText(name, {
       selector: '[data-slot="popover-content"]',
     })
-    expect(popover).toBeInTheDocument()
-    fireEvent.mouseLeave(chip)
+  }
+
+  it('reveals the full name in a popover on hover and hides it on leave', async () => {
+    renderResults()
+    const chip = screen.getAllByRole('button', { name: 'Grace Hopper' })[0]
+    fireEvent.pointerEnter(chip)
+    await waitFor(() => expect(popoverText('Grace Hopper')).toBeInTheDocument())
+    fireEvent.pointerLeave(chip)
     await waitFor(() =>
-      expect(
-        screen.queryByText('Grace Hopper', {
-          selector: '[data-slot="popover-content"]',
-        }),
-      ).not.toBeInTheDocument(),
+      expect(popoverText('Grace Hopper')).not.toBeInTheDocument(),
+    )
+  })
+
+  it('only ever shows one popover across the group', async () => {
+    renderResults()
+    fireEvent.pointerEnter(
+      screen.getAllByRole('button', { name: 'Grace Hopper' })[0],
+    )
+    await waitFor(() => expect(popoverText('Grace Hopper')).toBeInTheDocument())
+    fireEvent.pointerEnter(
+      screen.getAllByRole('button', { name: 'Ada Lovelace' })[0],
+    )
+    await waitFor(() => expect(popoverText('Ada Lovelace')).toBeInTheDocument())
+    expect(popoverText('Grace Hopper')).not.toBeInTheDocument()
+  })
+
+  it('a tap (click) toggles the popover for touch devices', async () => {
+    renderResults()
+    const chip = screen.getAllByRole('button', { name: 'Grace Hopper' })[0]
+    fireEvent.click(chip)
+    await waitFor(() => expect(popoverText('Grace Hopper')).toBeInTheDocument())
+    fireEvent.click(chip)
+    await waitFor(() =>
+      expect(popoverText('Grace Hopper')).not.toBeInTheDocument(),
     )
   })
 
