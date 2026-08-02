@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addDays,
   formatDisplayDate,
   isoDate,
   isValidISODate,
@@ -39,6 +40,28 @@ describe('isValidISODate', () => {
     expect(isValidISODate('2026-13-01')).toBe(false)
     expect(isValidISODate('2025-02-29')).toBe(false)
     expect(isValidISODate('not-a-date')).toBe(false)
+  })
+})
+
+describe('addDays', () => {
+  it('adds within a month', () => {
+    expect(addDays('2026-07-25', 1)).toBe('2026-07-26')
+  })
+
+  it('crosses month, year, and leap boundaries', () => {
+    expect(addDays('2026-08-31', 1)).toBe('2026-09-01')
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
+    expect(addDays('2024-02-28', 1)).toBe('2024-02-29')
+    expect(addDays('2025-02-28', 1)).toBe('2025-03-01')
+  })
+
+  it('supports negative offsets', () => {
+    expect(addDays('2026-01-01', -1)).toBe('2025-12-31')
+  })
+
+  it('is stable across DST transitions', () => {
+    expect(addDays('2026-03-08', 1)).toBe('2026-03-09')
+    expect(addDays('2026-11-01', 1)).toBe('2026-11-02')
   })
 })
 

@@ -21,6 +21,13 @@ export function isValidISODate(value: string): boolean {
   return isoDate(parsed) === value
 }
 
+/** ISO date `days` after `iso` (negative allowed). */
+export function addDays(iso: string, days: number): string {
+  const date = parseISODate(iso)
+  date.setDate(date.getDate() + days)
+  return isoDate(date)
+}
+
 /** "Sat, Jul 25" */
 export function formatDisplayDate(iso: string): string {
   return parseISODate(iso).toLocaleDateString('en-US', {
