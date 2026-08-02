@@ -90,6 +90,12 @@ different `DEV_AUTH_EMAIL`/`DEV_AUTH_NAME`.
 page in the browser; use those credentials for the local admin UI at
 `http://127.0.0.1:8090/_/`.
 
+It also seeds a demo event at `/events/test` (owned by the dev user, with a
+spread of upcoming candidate dates) whenever no event with that slug exists.
+The check runs at PocketBase startup, on a minutely cron, and whenever
+`pnpm dev` starts (the Vite dev server POSTs to the dev-only `/api/dev-seed`
+route) — so deleting the event just respawns it.
+
 With a local backend running you can also exercise the full end-to-end flow in
 Playwright:
 
