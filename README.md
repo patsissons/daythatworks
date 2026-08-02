@@ -72,6 +72,11 @@ when `DEV_AUTH=true` is set on the PocketBase process — never set it on
 PocketHost. To act as a second group member, restart PocketBase with a
 different `DEV_AUTH_EMAIL`/`DEV_AUTH_NAME`.
 
+`DEV_AUTH=true` also bootstraps a local superuser (`admin@local.test` /
+`localdev-admin`) so PocketBase doesn't auto-open its first-run installer
+page in the browser; use those credentials for the local admin UI at
+`http://127.0.0.1:8090/_/`.
+
 With a local backend running you can also exercise the full end-to-end flow in
 Playwright:
 

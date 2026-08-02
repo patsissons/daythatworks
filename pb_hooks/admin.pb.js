@@ -5,11 +5,20 @@
 // matching superuser exists, one is created at startup. With PocketHost's
 // Admin Sync (on by default) your pockethost.io login already works, so this
 // is only needed for fully headless setups.
+//
+// In local dev (DEV_AUTH=true, never set on PocketHost) a default superuser
+// is created even without the env vars — otherwise `pocketbase serve` on a
+// fresh pb_data has no superuser and auto-opens the /_/#/pbinstall installer
+// page in the browser on every boot.
 onBootstrap((e) => {
   e.next()
 
-  const email = $os.getenv('INITIAL_ADMIN_EMAIL')
-  const password = $os.getenv('INITIAL_ADMIN_PASSWORD')
+  let email = $os.getenv('INITIAL_ADMIN_EMAIL')
+  let password = $os.getenv('INITIAL_ADMIN_PASSWORD')
+  if ((!email || !password) && $os.getenv('DEV_AUTH') === 'true') {
+    email = 'admin@local.test'
+    password = 'localdev-admin'
+  }
   if (!email || !password) return
 
   try {
