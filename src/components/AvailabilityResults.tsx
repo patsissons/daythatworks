@@ -1,14 +1,18 @@
 import { Trophy } from 'lucide-react'
+import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { AvatarPopoverGroup, InitialsAvatar } from '@/components/InitialsAvatar'
 import type { AvailabilityResult, SubmissionSummary } from '@/lib/availability'
 import { formatDisplayDate } from '@/lib/dates'
 import { cn } from '@/lib/utils'
+import type { EventsRecord } from '@/lib/pocketbase-types'
 
 interface AvailabilityResultsProps {
   result: AvailabilityResult
   submissions: SubmissionSummary[]
   /** Highlight the rows this submission is available for (permalinked member). */
   focusedSubmissionId?: string
+  /** When provided, each row offers write-only add-to-calendar links. */
+  event?: Pick<EventsRecord, 'id' | 'title' | 'description' | 'slug'>
 }
 
 function recommendation(result: AvailabilityResult): string {
@@ -30,6 +34,7 @@ export function AvailabilityResults({
   result,
   submissions,
   focusedSubmissionId,
+  event,
 }: AvailabilityResultsProps) {
   const byId = new Map(
     submissions.map((submission) => [submission.id, submission]),
@@ -91,6 +96,7 @@ export function AvailabilityResults({
                       Best day
                     </span>
                   )}
+                  {event && <AddToCalendarButton event={event} date={date} />}
                 </div>
                 {anyNames && count > 0 && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-31">

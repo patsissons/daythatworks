@@ -147,7 +147,7 @@ describe('EventPage', () => {
     fireEvent.change(screen.getByLabelText('Your name'), {
       target: { value: 'Guest Gal' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /Sat, Aug 1/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Sat, Aug 1/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     expect(loginAsGuest).toHaveBeenCalledWith('Guest Gal')
@@ -166,7 +166,7 @@ describe('EventPage', () => {
     create.mockResolvedValue({})
     renderPage()
     await screen.findByText('Summer BBQ')
-    fireEvent.click(screen.getByRole('button', { name: /Sat, Aug 1/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Sat, Aug 1/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     const payload = create.mock.calls[0][0] as Record<string, string>
@@ -186,7 +186,7 @@ describe('EventPage', () => {
     const updateButton = screen.getByRole('button', {
       name: 'Update availability',
     })
-    fireEvent.click(screen.getByRole('button', { name: /Mon, Aug 3/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Mon, Aug 3/ }))
     fireEvent.click(updateButton)
     await waitFor(() => expect(update).toHaveBeenCalledTimes(1))
     expect(update.mock.calls[0][0]).toBe(SUBMISSIONS[0].id)

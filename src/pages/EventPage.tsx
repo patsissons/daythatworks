@@ -181,6 +181,7 @@ function EventContent({
             dates: submission.dates ?? [],
           }))}
           focusedSubmissionId={submissionId}
+          event={event}
         />
       </section>
 

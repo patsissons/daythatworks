@@ -106,6 +106,31 @@ describe('AvailabilityResults', () => {
     )
   })
 
+  it('offers add-to-calendar on every date row when the event is provided', () => {
+    render(
+      <AvailabilityResults
+        result={aggregateAvailability(DATES, SUBMISSIONS)}
+        submissions={SUBMISSIONS}
+        event={{
+          id: 'evt1',
+          title: 'Summer BBQ',
+          description: '',
+          slug: 'summer-bbq',
+        }}
+      />,
+    )
+    expect(
+      screen.getAllByRole('button', { name: /Add .* to calendar/ }),
+    ).toHaveLength(DATES.length)
+  })
+
+  it('omits add-to-calendar without an event', () => {
+    renderResults()
+    expect(
+      screen.queryByRole('button', { name: /Add .* to calendar/ }),
+    ).not.toBeInTheDocument()
+  })
+
   it('hides the chip rows entirely when all names are hidden', () => {
     renderResults([
       { id: 's1', submitterName: '', dates: ['2026-08-01'] },
