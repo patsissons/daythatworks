@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
-const BASE_TITLE = 'Day that works — find a day that works'
+// Keep in sync with the <title> inside index.html's og marker block.
+const BASE_TITLE = 'Day that works — free group scheduling poll'
 
 /** Set the document title for this page, restoring the default on unmount. */
 export function usePageTitle(title?: string) {
