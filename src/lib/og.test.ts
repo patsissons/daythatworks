@@ -89,6 +89,30 @@ describe('injectMeta', () => {
     expect(og.injectMeta('<head></head>', FIELDS)).toBe('<head></head>')
   })
 
+  it('adds a robots noindex meta only when requested', () => {
+    const withNoindex = og.injectMeta(PAGE, { ...FIELDS, noindex: true })
+    expect(withNoindex).toContain('<meta name="robots" content="noindex" />')
+    expect(og.injectMeta(PAGE, FIELDS)).not.toContain('name="robots"')
+  })
+
+  it('embeds pre-serialized JSON-LD with </script>-safe escaping', () => {
+    const jsonLd = JSON.stringify({
+      '@type': 'FAQPage',
+      name: '</script><script>alert(1)',
+    })
+    const out = og.injectMeta(PAGE, { ...FIELDS, jsonLd })
+    expect(out).toContain('<script type="application/ld+json">')
+    expect(out).not.toContain('</script><script>alert')
+    const embedded = /<script type="application\/ld\+json">(.*)<\/script>/s.exec(
+      out,
+    )
+    expect(embedded).not.toBeNull()
+    expect(JSON.parse(embedded![1])).toEqual({
+      '@type': 'FAQPage',
+      name: '</script><script>alert(1)',
+    })
+  })
+
   it('escapes malicious event content', () => {
     const out = og.injectMeta(PAGE, {
       ...FIELDS,

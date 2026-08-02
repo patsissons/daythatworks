@@ -25,7 +25,9 @@ function metaText(value, max) {
 
 /**
  * Build the replacement head block (title + description + og/twitter tags).
- * fields: { title, description, url, image, imageIsDefault }
+ * fields: { title, description, url, image, imageIsDefault, noindex, jsonLd }
+ * jsonLd is a pre-serialized JSON string; noindex keeps search engines away
+ * from unlisted pages while still letting unfurl crawlers read the OG tags.
  */
 function buildMeta(fields) {
   var title = escapeHtml(fields.title)
@@ -47,6 +49,17 @@ function buildMeta(fields) {
     lines.push('<meta property="og:image:height" content="630" />')
   }
   lines.push('<meta name="twitter:card" content="summary_large_image" />')
+  if (fields.noindex) {
+    lines.push('<meta name="robots" content="noindex" />')
+  }
+  if (fields.jsonLd) {
+    // < is identical JSON but can never terminate the script element
+    lines.push(
+      '<script type="application/ld+json">' +
+        String(fields.jsonLd).replace(/</g, '\\u003c') +
+        '</script>',
+    )
+  }
   return lines.join('\n    ')
 }
 
@@ -161,12 +174,14 @@ function serveEventPage(e) {
       cardVersion: cardVersion,
     })
 
+    // noindex: events are unlisted share-by-link pages, not search results
     html = injectMeta(html, {
       title: event.getString('title') + ' — Day that works',
       description: description,
       url: origin + '/events/' + (event.getString('slug') || event.id),
       image: resolved.url,
       imageIsDefault: resolved.isDefault,
+      noindex: true,
     })
   }
 
