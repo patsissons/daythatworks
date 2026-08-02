@@ -81,7 +81,10 @@ function foldICSLine(line: string): string {
 
 /** "20260802T173000Z" — UTC timestamp for DTSTAMP. */
 function icsTimestamp(date: Date): string {
-  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+  return date
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z')
 }
 
 /** A single all-day VEVENT calendar file for Apple Calendar / desktop clients. */

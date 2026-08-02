@@ -15,6 +15,15 @@ pasted — links are verified in the browser before saving). Guest event creatio
 users are unlimited. Viewing needs no account. An event can hide responder
 names from the group, and emails are never exposed through the public API.
 
+Every availability row offers write-only **add to calendar** actions (Google
+Calendar and Outlook.com compose links, plus an `.ics` download for Apple
+Calendar and desktop clients) — the app never reads anyone's calendar: there
+are no calendar OAuth scopes and no calendar API calls, by design. A `/faq`
+page (linked in the footer) answers common questions and compares the app
+honestly with Timeful, When2meet, LettuceMeet, and friends.
+
+Free and open source under the [MIT license](LICENSE).
+
 Live at [https://daythatworks.com](https://daythatworks.com).
 
 - Frontend: Vite + React + Tailwind CSS + shadcn/ui
@@ -108,6 +117,13 @@ PB_TYPEGEN_URL=https://daythatworks.pockethost.io PB_TYPEGEN_EMAIL=<admin-email>
 ```
 
 The admin account is your pockethost.io login (PocketHost Admin Sync provisions it automatically).
+
+## SEO
+
+- Default meta tags and homepage `WebApplication` JSON-LD live inside the `<!-- og:start -->`/`<!-- og:end -->` marker block in `index.html`.
+- `pb_hooks/og.pb.js` rewrites that block per event (OpenGraph unfurls + `noindex` — event pages are unlisted share-by-link pages); `pb_hooks/seo.pb.js` rewrites it for `/faq` with `FAQPage` JSON-LD.
+- `public/robots.txt` and `public/sitemap.xml` are copied into `pb_public/` at build time; the sitemap lists only the static routes.
+- FAQ copy is shared between `src/lib/faq.ts` (the page) and `pb_hooks/lib/seo.js` (the JSON-LD); `src/lib/seo.test.ts` keeps them in sync.
 
 ## CI
 

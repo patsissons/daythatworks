@@ -138,8 +138,8 @@ export function FaqPage() {
           Frequently asked questions
         </h1>
         <p className="text-muted-foreground">
-          The short version: free, open source, no account needed — and it
-          never reads anyone&apos;s calendar.
+          The short version: free, open source, no account needed — and it never
+          reads anyone&apos;s calendar.
         </p>
       </header>
 
@@ -175,9 +175,9 @@ export function FaqPage() {
         </h2>
         <p className="text-muted-foreground text-sm">
           An honest look at the apps we get compared to. Several of them are
-          genuinely good — a few are open source too — so the real difference
-          is philosophy: Day that works never asks for calendar access, never
-          shows ads, and never adds features that would require either.
+          genuinely good — a few are open source too — so the real difference is
+          philosophy: Day that works never asks for calendar access, never shows
+          ads, and never adds features that would require either.
         </p>
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-160 text-sm">
@@ -187,7 +187,11 @@ export function FaqPage() {
                   App
                 </th>
                 {COLUMNS.map((column) => (
-                  <th key={column.key} scope="col" className="p-3 font-semibold">
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className="p-3 font-semibold"
+                  >
                     {column.label}
                   </th>
                 ))}

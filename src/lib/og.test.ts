@@ -103,9 +103,8 @@ describe('injectMeta', () => {
     const out = og.injectMeta(PAGE, { ...FIELDS, jsonLd })
     expect(out).toContain('<script type="application/ld+json">')
     expect(out).not.toContain('</script><script>alert')
-    const embedded = /<script type="application\/ld\+json">(.*)<\/script>/s.exec(
-      out,
-    )
+    const embedded =
+      /<script type="application\/ld\+json">(.*)<\/script>/s.exec(out)
     expect(embedded).not.toBeNull()
     expect(JSON.parse(embedded![1])).toEqual({
       '@type': 'FAQPage',

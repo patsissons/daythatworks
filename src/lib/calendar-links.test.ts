@@ -122,7 +122,7 @@ describe('downloadICS', () => {
   })
 
   it('downloads a blob named after the event', () => {
-    const createObjectURL = vi.fn((_blob: Blob) => 'blob:mock')
+    const createObjectURL = vi.fn<(blob: Blob) => string>(() => 'blob:mock')
     const revokeObjectURL = vi.fn()
     vi.stubGlobal('URL', {
       ...URL,

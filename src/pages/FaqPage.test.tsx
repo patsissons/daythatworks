@@ -40,7 +40,9 @@ describe('FaqPage', () => {
       'Crab Fit',
       'CabbageMeet',
     ]) {
-      expect(screen.getByRole('rowheader', { name: new RegExp(app) })).toBeInTheDocument()
+      expect(
+        screen.getByRole('rowheader', { name: new RegExp(app) }),
+      ).toBeInTheDocument()
     }
     expect(screen.getByText('Never — by design')).toBeInTheDocument()
   })
