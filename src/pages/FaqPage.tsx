@@ -176,8 +176,16 @@ export function FaqPage() {
         <p className="text-muted-foreground text-sm">
           An honest look at the apps we get compared to. Several of them are
           genuinely good — a few are open source too — so the real difference is
-          philosophy: Day that works never asks for calendar access, never shows
-          ads, and never adds features that would require either.
+          philosophy: Day that works is small on purpose. It stores exactly four
+          kinds of records — events, availability responses, user identities
+          (just a name and email, guest or signed-in), and a self-purging
+          rate-limit log of salted IP hashes — and nothing else.
+        </p>
+        <p className="text-muted-foreground text-sm">
+          The whole codebase is about 4,000 lines you can read in an afternoon,
+          with a dozen runtime dependencies, most of which exist purely to keep
+          the UI clean. Fewer features, fewer permissions, less to trust — and
+          never calendar access or ads.
         </p>
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-160 text-sm">

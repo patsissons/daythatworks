@@ -57,7 +57,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: 'data',
     question: 'What data do you collect?',
     answer:
-      'Only what the app needs to function: your event details and each response’s name and chosen days. There are no ads, no analytics trackers, and no third-party scripts, and email addresses are never shown to other users.',
+      'Four kinds of records, and nothing else: events, availability responses (a name and the chosen days), user identities (just a name and email — guest identities can be erased any time), and a short-lived rate-limit log of salted IP hashes that purges itself automatically. There are no ads, no analytics trackers, and no third-party scripts, and email addresses are never shown to other users.',
   },
   {
     id: 'self-host',
