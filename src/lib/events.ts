@@ -11,6 +11,28 @@ export function getEventByIdOrSlug(idOrSlug: string): Promise<EventsRecord> {
     )
 }
 
+/** True when another event already uses this slug (excludeId skips the event being edited). */
+export async function isSlugTaken(
+  slug: string,
+  excludeId?: string,
+): Promise<boolean> {
+  try {
+    await pb.collection('events').getFirstListItem(
+      excludeId
+        ? pb.filter('slug = {:slug} && id != {:id}', { slug, id: excludeId })
+        : pb.filter('slug = {:slug}', { slug }),
+      // we manage staleness ourselves; don't let the SDK auto-cancel
+      { requestKey: null },
+    )
+    return true
+  } catch (error) {
+    if (error instanceof ClientResponseError && error.status === 404) {
+      return false
+    }
+    throw error
+  }
+}
+
 export function getEventSubmissions(
   eventId: string,
 ): Promise<SubmissionsRecord[]> {

@@ -1,10 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AuthRecord } from 'pocketbase'
 import { HomePage } from '@/pages/HomePage'
 
 const getFullList = vi.fn()
+const logout = vi.fn()
+const confirmGuestLogout = vi.fn()
 let mockUser: AuthRecord | null = null
 let mockIsGuest = false
 
@@ -16,7 +18,8 @@ vi.mock('@/lib/pocketbase', () => ({
 }))
 
 vi.mock('@/lib/auth', () => ({
-  useAuth: () => ({ user: mockUser, isGuest: mockIsGuest }),
+  useAuth: () => ({ user: mockUser, isGuest: mockIsGuest, logout }),
+  confirmGuestLogout: (...args: unknown[]) => confirmGuestLogout(...args),
 }))
 
 function renderPage() {
@@ -103,5 +106,29 @@ describe('HomePage', () => {
       'href',
       '/login',
     )
+  })
+
+  it('erases the guest identity after confirmation', async () => {
+    mockUser = { id: 'me' } as AuthRecord
+    mockIsGuest = true
+    getFullList.mockResolvedValue([])
+    confirmGuestLogout.mockReturnValue(true)
+    renderPage()
+    fireEvent.click(
+      await screen.findByRole('button', { name: /erase your guest identity/ }),
+    )
+    expect(logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the guest identity when the confirm is declined', async () => {
+    mockUser = { id: 'me' } as AuthRecord
+    mockIsGuest = true
+    getFullList.mockResolvedValue([])
+    confirmGuestLogout.mockReturnValue(false)
+    renderPage()
+    fireEvent.click(
+      await screen.findByRole('button', { name: /erase your guest identity/ }),
+    )
+    expect(logout).not.toHaveBeenCalled()
   })
 })

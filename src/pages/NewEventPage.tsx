@@ -60,6 +60,7 @@ export function NewEventPage() {
               placeholder="Alex"
               maxLength={100}
               className="max-w-60"
+              required
             />
             <p className="text-muted-foreground text-sm">
               No account needed — your events are saved in this browser.{' '}

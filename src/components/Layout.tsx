@@ -1,27 +1,18 @@
 import { Link, Outlet } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/lib/auth'
+import { confirmGuestLogout, useAuth } from '@/lib/auth'
 
 export function Layout() {
   const { user, isGuest, logout } = useAuth()
 
   function onLogout() {
-    if (
-      isGuest &&
-      !window.confirm(
-        'You are participating as a guest. Logging out discards your guest ' +
-          'identity, so you will no longer be able to edit your responses. ' +
-          'Log out anyway?',
-      )
-    ) {
-      return
-    }
+    if (isGuest && !confirmGuestLogout()) return
     logout()
   }
 
   return (
-    <div className="bg-background text-foreground flex min-h-screen flex-col">
-      <header className="border-b">
+    <div className="bg-background text-foreground flex h-screen flex-col overflow-hidden supports-[height:100dvh]:h-dvh">
+      <header className="shrink-0 border-b">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
           <Link to="/" className="font-semibold">
             Day that works
@@ -38,7 +29,7 @@ export function Layout() {
                   )}
                 </span>
                 <Button variant="outline" size="sm" onClick={onLogout}>
-                  Log out
+                  {isGuest ? 'Log out & forget me' : 'Log out'}
                 </Button>
               </>
             ) : (
@@ -49,11 +40,21 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        <Outlet />
+      <main className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="mx-auto w-full max-w-5xl px-4 py-8">
+          <Outlet />
+        </div>
       </main>
-      <footer className="text-muted-foreground border-t py-4 text-center text-sm">
-        Powered by PocketHost
+      <footer className="text-muted-foreground shrink-0 border-t py-4 text-center text-sm">
+        Powered by{' '}
+        <a
+          href="https://pockethost.io/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-foreground underline underline-offset-4"
+        >
+          PocketHost
+        </a>
       </footer>
     </div>
   )

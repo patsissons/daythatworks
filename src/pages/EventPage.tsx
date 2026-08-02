@@ -134,9 +134,9 @@ function EventContent({
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="space-y-3">
-        {event.image && (
+        {(event.imageUrl || event.image) && (
           <img
-            src={pb.files.getURL(event, event.image)}
+            src={event.imageUrl || pb.files.getURL(event, event.image)}
             alt=""
             className="max-h-64 w-full rounded-xl border object-cover"
           />
@@ -259,50 +259,59 @@ function RespondSection({
           {!user && ' No account needed — just your name.'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {needsName && (
-          <div className="max-w-60 space-y-2">
-            <Label htmlFor="responder-name">Your name</Label>
-            <Input
-              id="responder-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Alex"
-              maxLength={100}
-              disabled={busy}
-            />
-          </div>
-        )}
-        <DateToggleChips
-          dates={event.dates}
-          selected={selected}
-          onChange={setSelected}
-          disabled={busy}
-        />
-        <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={save} disabled={busy}>
-            {mine ? 'Update availability' : 'Save availability'}
-          </Button>
-          {savedId && (
-            <CopyLinkButton
-              url={window.location.origin + submissionPath(event, savedId)}
-              label="Copy your response link"
-            />
+      <CardContent>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            void save()
+          }}
+          className="space-y-4"
+        >
+          {needsName && (
+            <div className="max-w-60 space-y-2">
+              <Label htmlFor="responder-name">Your name</Label>
+              <Input
+                id="responder-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Alex"
+                maxLength={100}
+                disabled={busy}
+                required
+              />
+            </div>
           )}
-        </div>
-        {!user && (
-          <p className="text-muted-foreground text-sm">
-            Have an account?{' '}
-            <Link
-              to="/login"
-              state={{ from: eventPath(event) }}
-              className="underline underline-offset-2"
-            >
-              Sign in instead
-            </Link>
-          </p>
-        )}
-        {error && <p className="text-destructive text-sm">{error}</p>}
+          <DateToggleChips
+            dates={event.dates}
+            selected={selected}
+            onChange={setSelected}
+            disabled={busy}
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={busy}>
+              {mine ? 'Update availability' : 'Save availability'}
+            </Button>
+            {savedId && (
+              <CopyLinkButton
+                url={window.location.origin + submissionPath(event, savedId)}
+                label="Copy your response link"
+              />
+            )}
+          </div>
+          {!user && (
+            <p className="text-muted-foreground text-sm">
+              Have an account?{' '}
+              <Link
+                to="/login"
+                state={{ from: eventPath(event) }}
+                className="underline underline-offset-2"
+              >
+                Sign in instead
+              </Link>
+            </p>
+          )}
+          {error && <p className="text-destructive text-sm">{error}</p>}
+        </form>
       </CardContent>
     </Card>
   )

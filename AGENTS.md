@@ -40,7 +40,8 @@ phio is the PocketHost CLI (`npm install -g phio tsx`; requires Node 24+ — phi
 
 ## App invariants
 
-- `events` and `submissions` use client-supplied 26-char lowercased ULID ids (`newId()` in `src/lib/id.ts`); event slugs are optional and unique only among non-empty values.
+- `events` and `submissions` use client-supplied 26-char lowercased ULID ids (`newId()` in `src/lib/id.ts`); event slugs are optional and unique only among non-empty values (the form checks availability on blur via `isSlugTaken` in `src/lib/events.ts`; the partial unique index is the backstop).
+- Event images are either the uploaded `image` file or the external `imageUrl` text field (http/https, validated by the field pattern in `pb_migrations/1700000008_event_image_url.js`); `imageUrl` wins when both exist — EventPage and `og.js` (`resolveOgImage`) both prefer it. The form (`ImageDropzone`) verifies links client-side and clears whichever field the user switched away from.
 - `pb_hooks/records.pb.js` is the source of truth for write-time validation (≥2 valid dates per event, submission dates ⊆ event dates), stamps `creator*`/`submitter*` fields from the authenticated user, and hides emails (and names on `hideNames` events) from other users via `onRecordEnrich`. Don't rely on client-sent identity fields.
 - Local development runs a local `pocketbase serve` with the dev-only `/api/dev-login` route (`DEV_AUTH=true` + `DEV_AUTH_NAME`/`DEV_AUTH_EMAIL` env; `VITE_DEV_AUTH=true` shows the button). Never enable `DEV_AUTH` on PocketHost.
 - Guests are real auth users: `/api/guest-login` (pb_hooks/guest-auth.pb.js) mints a `guest=true` user with a synthetic `@guest.daythatworks.com` email and returns a normal auth token that the SPA stores like any login — that token IS the guest's persistent identity, so all rules/hooks apply unchanged.

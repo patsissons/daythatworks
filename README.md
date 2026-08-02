@@ -7,8 +7,10 @@ Results roll up per date with a best-day recommendation. Events live at
 response has its own permalink at `/events/<slug-or-id>/s/<submission-id>`.
 No account is needed to create events or respond — just a name. Guests get
 a persistent identity kept in the browser so they can edit their events and
-responses; signing in (Google/GitHub OAuth) makes that history durable
-across browsers. Guest event creation is rate limited (sliding 24h window:
+responses (and can erase it any time via "Log out & forget me"); signing in
+(Google/GitHub OAuth) makes that history durable across browsers. Event
+images can be uploaded or linked from an external URL (dragged, dropped, or
+pasted — links are verified in the browser before saving). Guest event creation is rate limited (sliding 24h window:
 5 per IP, 5 per guest, plus a global daily cap) to keep spam out; signed-in
 users are unlimited. Viewing needs no account. An event can hide responder
 names from the group, and emails are never exposed through the public API.

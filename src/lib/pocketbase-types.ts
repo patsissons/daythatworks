@@ -8,6 +8,7 @@ export interface EventsRecord {
   slug: string
   description: string
   image: string
+  imageUrl: string
   dates: string[]
   hideNames: boolean
   creator: string

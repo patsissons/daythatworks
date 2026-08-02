@@ -21,6 +21,16 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+export const GUEST_LOGOUT_CONFIRM =
+  'You are a guest — logging out permanently erases your guest identity ' +
+  'from this browser, so you will no longer be able to edit your events or ' +
+  'responses (they stay visible to others). Erase your guest identity?'
+
+/** Confirm before erasing a guest identity (logout clears it for good). */
+export function confirmGuestLogout(): boolean {
+  return window.confirm(GUEST_LOGOUT_CONFIRM)
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthRecord | null>(pb.authStore.record)
 

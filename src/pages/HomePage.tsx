@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { useAuth } from '@/lib/auth'
+import { confirmGuestLogout, useAuth } from '@/lib/auth'
 import { eventPath } from '@/lib/events'
 import { formatDisplayDate } from '@/lib/dates'
 import { logger } from '@/lib/logger'
@@ -43,7 +43,7 @@ type MineState =
     }
 
 export function HomePage() {
-  const { user, isGuest } = useAuth()
+  const { user, isGuest, logout } = useAuth()
 
   return (
     <div className="space-y-12">
@@ -82,7 +82,17 @@ export function HomePage() {
           <Link to="/login" className="underline underline-offset-4">
             Sign in
           </Link>{' '}
-          to keep them.
+          to keep them, or{' '}
+          <button
+            type="button"
+            className="cursor-pointer underline underline-offset-4"
+            onClick={() => {
+              if (confirmGuestLogout()) logout()
+            }}
+          >
+            erase your guest identity
+          </button>
+          .
         </p>
       )}
       {user && <YourStuff userId={user.id} />}

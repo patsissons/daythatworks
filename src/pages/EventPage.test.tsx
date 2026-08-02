@@ -11,6 +11,7 @@ const EVENT: EventsRecord = {
   slug: 'summer-bbq',
   description: 'Bring snacks',
   image: '',
+  imageUrl: '',
   dates: ['2026-08-01', '2026-08-02', '2026-08-03'],
   hideNames: false,
   creator: 'user-creator',
@@ -111,13 +112,31 @@ describe('EventPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('requires a name before saving as guest', async () => {
+  it('requires a non-empty name before saving as guest', async () => {
     renderPage()
     await screen.findByText('Summer BBQ')
+    expect(screen.getByLabelText('Your name')).toBeRequired()
+    // whitespace passes native `required`; the trim check still blocks it
+    fireEvent.change(screen.getByLabelText('Your name'), {
+      target: { value: '   ' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     expect(await screen.findByText(/Enter your name/)).toBeInTheDocument()
     expect(loginAsGuest).not.toHaveBeenCalled()
     expect(create).not.toHaveBeenCalled()
+  })
+
+  it('renders an external image link directly', async () => {
+    getFirstListItem.mockResolvedValue({
+      ...EVENT,
+      imageUrl: 'https://example.com/pic.jpg',
+    })
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    expect(screen.getByRole('presentation')).toHaveAttribute(
+      'src',
+      'https://example.com/pic.jpg',
+    )
   })
 
   it('creates a guest identity and submits in one save', async () => {

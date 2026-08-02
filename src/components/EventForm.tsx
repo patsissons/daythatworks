@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import { ImagePlus, X } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { MultiDatePicker } from '@/components/MultiDatePicker'
+import { ImageDropzone, type ImageUrlStatus } from '@/components/ImageDropzone'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { isoDate } from '@/lib/dates'
-import { pbErrorMessage } from '@/lib/events'
+import { isSlugTaken, pbErrorMessage } from '@/lib/events'
 import { pb } from '@/lib/pocketbase'
 import type { EventsRecord } from '@/lib/pocketbase-types'
 import { isValidSlug, suggestSlug } from '@/lib/slug'
@@ -24,6 +24,21 @@ interface EventFormProps {
   children?: React.ReactNode
 }
 
+/** What the image should be after saving; upload and link are exclusive. */
+type ImageSource =
+  | { kind: 'unchanged' }
+  | { kind: 'file'; file: File; preview: string }
+  | { kind: 'url'; url: string }
+  | { kind: 'none' }
+
+type SlugCheck =
+  | { status: 'idle' | 'checking' }
+  | { status: 'available' | 'taken' | 'invalid' | 'error'; slug: string }
+
+const SLUG_FORMAT_MESSAGE =
+  'Slugs are lowercase letters and numbers separated by hyphens.'
+const SLUG_TAKEN_MESSAGE = 'That link is taken — pick another.'
+
 export function EventForm({
   initial,
   submitLabel,
@@ -37,40 +52,80 @@ export function EventForm({
   const [description, setDescription] = useState(initial?.description ?? '')
   const [dates, setDates] = useState<string[]>(initial?.dates ?? [])
   const [hideNames, setHideNames] = useState(initial?.hideNames ?? false)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [removeImage, setRemoveImage] = useState(false)
+  const [image, setImageState] = useState<ImageSource>({ kind: 'unchanged' })
+  const [imageUrlStatus, setImageUrlStatus] = useState<ImageUrlStatus>('idle')
+  const [slugCheck, setSlugCheck] = useState<SlugCheck>({ status: 'idle' })
+  const slugSeq = useRef(0)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const [preview, setPreview] = useState<string | null>(null)
-
-  function updateImage(file: File | null, remove: boolean) {
-    setImageFile(file)
-    setRemoveImage(remove)
-    setPreview((old) => {
-      if (old) URL.revokeObjectURL(old)
-      return file ? URL.createObjectURL(file) : null
+  function setImage(next: ImageSource) {
+    setImageState((old) => {
+      if (old.kind === 'file') URL.revokeObjectURL(old.preview)
+      return next
     })
   }
 
-  const existingImageUrl =
-    initial?.image && !removeImage && !imageFile
-      ? pb.files.getURL(initial, initial.image)
-      : null
-  const shownImage = preview ?? existingImageUrl
+  const preview =
+    image.kind === 'file'
+      ? image.preview
+      : image.kind === 'url'
+        ? image.url
+        : image.kind === 'unchanged'
+          ? initial?.imageUrl ||
+            (initial?.image ? pb.files.getURL(initial, initial.image) : null)
+          : null
+  const committedUrl =
+    image.kind === 'url'
+      ? image.url
+      : image.kind === 'unchanged'
+        ? (initial?.imageUrl ?? '')
+        : ''
 
   const slugPlaceholder = suggestSlug(title) || 'my-event'
   const removedResponded = respondedDates.filter(
     (date) => !dates.includes(date),
   )
 
+  async function checkSlug() {
+    const value = slug.trim()
+    if (!value || value === initial?.slug) {
+      slugSeq.current++
+      setSlugCheck({ status: 'idle' })
+      return
+    }
+    if (!isValidSlug(value)) {
+      slugSeq.current++
+      setSlugCheck({ status: 'invalid', slug: value })
+      return
+    }
+    const mySeq = ++slugSeq.current
+    setSlugCheck({ status: 'checking' })
+    try {
+      const taken = await isSlugTaken(value, initial?.id)
+      if (mySeq !== slugSeq.current) return
+      setSlugCheck({ status: taken ? 'taken' : 'available', slug: value })
+    } catch {
+      if (mySeq !== slugSeq.current) return
+      // availability is best-effort; the server's unique index is the backstop
+      setSlugCheck({ status: 'error', slug: value })
+    }
+  }
+
   function validate(): string | null {
     const extraProblem = extraValidate?.()
     if (extraProblem) return extraProblem
     if (!title.trim()) return 'Give your event a title.'
     if (dates.length < 2) return 'Pick at least 2 candidate dates.'
-    if (slug && !isValidSlug(slug)) {
-      return 'Slugs are lowercase letters and numbers separated by hyphens.'
+    if (slug && !isValidSlug(slug)) return SLUG_FORMAT_MESSAGE
+    if (slug && slugCheck.status === 'taken' && slugCheck.slug === slug) {
+      return SLUG_TAKEN_MESSAGE
+    }
+    if (imageUrlStatus === 'verifying') {
+      return 'Hang on — still checking the image link.'
+    }
+    if (imageUrlStatus === 'error') {
+      return 'Check the image link before saving.'
     }
     return null
   }
@@ -91,8 +146,16 @@ export function EventForm({
       form.set('description', description)
       form.set('dates', JSON.stringify(dates))
       form.set('hideNames', String(hideNames))
-      if (imageFile) form.set('image', imageFile)
-      else if (removeImage) form.set('image', '')
+      if (image.kind === 'file') {
+        form.set('image', image.file)
+        form.set('imageUrl', '')
+      } else if (image.kind === 'url') {
+        form.set('imageUrl', image.url)
+        form.set('image', '')
+      } else if (image.kind === 'none') {
+        form.set('image', '')
+        form.set('imageUrl', '')
+      }
       await onSubmit(form)
     } catch (err) {
       setError(pbErrorMessage(err, 'Could not save the event.'))
@@ -127,12 +190,42 @@ export function EventForm({
           <Input
             id="event-slug"
             value={slug}
-            onChange={(e) => setSlug(e.target.value)}
+            onChange={(e) => {
+              setSlug(e.target.value)
+              if (slugCheck.status !== 'idle') {
+                slugSeq.current++
+                setSlugCheck({ status: 'idle' })
+              }
+            }}
+            onBlur={() => void checkSlug()}
             placeholder={slugPlaceholder}
             maxLength={100}
             className="max-w-60"
           />
         </div>
+        <p aria-live="polite" className="min-h-4 text-sm">
+          {slugCheck.status === 'checking' && (
+            <span className="text-muted-foreground">
+              Checking availability…
+            </span>
+          )}
+          {slugCheck.status === 'available' && (
+            <span className="text-green-600 dark:text-green-500">
+              ✓ /events/{slugCheck.slug} is available
+            </span>
+          )}
+          {slugCheck.status === 'taken' && (
+            <span className="text-destructive">{SLUG_TAKEN_MESSAGE}</span>
+          )}
+          {slugCheck.status === 'invalid' && (
+            <span className="text-destructive">{SLUG_FORMAT_MESSAGE}</span>
+          )}
+          {slugCheck.status === 'error' && (
+            <span className="text-muted-foreground">
+              Couldn&apos;t check availability right now.
+            </span>
+          )}
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -154,38 +247,16 @@ export function EventForm({
           Image{' '}
           <span className="text-muted-foreground font-normal">(optional)</span>
         </Label>
-        {shownImage && (
-          <div className="relative w-fit">
-            <img
-              src={shownImage}
-              alt="Event"
-              className="max-h-48 rounded-lg border object-cover"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              aria-label="Remove image"
-              className="absolute top-2 right-2 size-7"
-              onClick={() => updateImage(null, true)}
-            >
-              <X />
-            </Button>
-          </div>
-        )}
-        <label
-          htmlFor="event-image"
-          className="border-input hover:bg-accent inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm"
-        >
-          <ImagePlus className="size-4" aria-hidden />
-          {shownImage ? 'Replace image' : 'Add an image'}
-        </label>
-        <input
-          id="event-image"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          className="sr-only"
-          onChange={(e) => updateImage(e.target.files?.[0] ?? null, false)}
+        <ImageDropzone
+          preview={preview}
+          url={committedUrl}
+          onFile={(file) =>
+            setImage({ kind: 'file', file, preview: URL.createObjectURL(file) })
+          }
+          onUrl={(url) => setImage({ kind: 'url', url })}
+          onRemove={() => setImage({ kind: 'none' })}
+          onStatusChange={setImageUrlStatus}
+          disabled={busy}
         />
       </div>
 

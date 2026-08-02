@@ -11,6 +11,14 @@ const og = moduleRef.exports as {
   metaText: (value: string, max: number) => string
   buildMeta: (fields: Record<string, unknown>) => string
   injectMeta: (html: string, fields: Record<string, unknown>) => string
+  resolveOgImage: (opts: {
+    origin: string
+    eventId: string
+    image: string
+    imageUrl: string
+    stats: { total: number; bestCount: number } | null
+    cardVersion: number
+  }) => { url: string; isDefault: boolean }
 }
 
 const PAGE =
@@ -87,5 +95,46 @@ describe('injectMeta', () => {
       title: '"/><script>alert(1)</script>',
     })
     expect(out).not.toContain('<script>alert')
+  })
+})
+
+describe('resolveOgImage', () => {
+  const BASE = {
+    origin: 'https://daythatworks.com',
+    eventId: 'evt123',
+    image: '',
+    imageUrl: '',
+    stats: null,
+    cardVersion: 3,
+  }
+
+  it('prefers the external link over everything', () => {
+    expect(
+      og.resolveOgImage({
+        ...BASE,
+        image: 'photo.jpg',
+        imageUrl: 'https://example.com/pic.png',
+      }),
+    ).toEqual({ url: 'https://example.com/pic.png', isDefault: false })
+  })
+
+  it('falls back to the uploaded file URL', () => {
+    expect(og.resolveOgImage({ ...BASE, image: 'photo.jpg' })).toEqual({
+      url: 'https://daythatworks.com/api/files/events/evt123/photo.jpg',
+      isDefault: false,
+    })
+  })
+
+  it('defaults to the stats card with a version cache-buster', () => {
+    expect(
+      og.resolveOgImage({ ...BASE, stats: { total: 4, bestCount: 3 } }),
+    ).toEqual({
+      url: 'https://daythatworks.com/api/og/events/evt123.png?v=3-4-3',
+      isDefault: true,
+    })
+    expect(og.resolveOgImage(BASE)).toEqual({
+      url: 'https://daythatworks.com/api/og/events/evt123.png',
+      isDefault: true,
+    })
   })
 })

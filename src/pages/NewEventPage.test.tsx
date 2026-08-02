@@ -119,9 +119,14 @@ describe('NewEventPage', () => {
     expect(screen.queryByLabelText('Your name')).not.toBeInTheDocument()
   })
 
-  it('requires a name when signed out', async () => {
+  it('requires a non-empty name when signed out', async () => {
     auth.user = null
     renderPage()
+    expect(screen.getByLabelText('Your name')).toBeRequired()
+    // whitespace passes native `required`; the trim check still blocks it
+    fireEvent.change(screen.getByLabelText('Your name'), {
+      target: { value: '   ' },
+    })
     fireEvent.change(screen.getByLabelText('Title'), {
       target: { value: 'Summer BBQ' },
     })

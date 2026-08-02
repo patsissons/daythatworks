@@ -50,6 +50,38 @@ function buildMeta(fields) {
   return lines.join('\n    ')
 }
 
+/**
+ * Pick the og:image source: external link > uploaded file > live stats card.
+ * opts: { origin, eventId, image, imageUrl, stats, cardVersion }
+ * Returns { url, isDefault } — isDefault only for the stats card, whose
+ * 1200x630 dimensions are known.
+ */
+function resolveOgImage(opts) {
+  if (opts.imageUrl) return { url: opts.imageUrl, isDefault: false }
+  if (opts.image) {
+    return {
+      url: opts.origin + '/api/files/events/' + opts.eventId + '/' + opts.image,
+      isDefault: false,
+    }
+  }
+  return {
+    url:
+      opts.origin +
+      '/api/og/events/' +
+      opts.eventId +
+      '.png' +
+      (opts.stats
+        ? '?v=' +
+          opts.cardVersion +
+          '-' +
+          opts.stats.total +
+          '-' +
+          opts.stats.bestCount
+        : ''),
+    isDefault: true,
+  }
+}
+
 /** Replace the marker block in index.html; returns html unchanged if markers are missing. */
 function injectMeta(html, fields) {
   var start = html.indexOf(OG_START)
@@ -118,29 +150,34 @@ function serveEventPage(e) {
         description
     }
 
-    // uploaded event image wins; otherwise a live stats card (?v busts
-    // crawler caches as responses come in)
-    var image = event.getString('image')
-    var imageUrl = image
-      ? origin + '/api/files/events/' + event.id + '/' + image
-      : origin +
-        '/api/og/events/' +
-        event.id +
-        '.png' +
-        (stats
-          ? '?v=' + cardVersion + '-' + stats.total + '-' + stats.bestCount
-          : '')
+    // external link wins, then the uploaded file; otherwise a live stats
+    // card (?v busts crawler caches as responses come in)
+    var resolved = resolveOgImage({
+      origin: origin,
+      eventId: event.id,
+      image: event.getString('image'),
+      imageUrl: event.getString('imageUrl'),
+      stats: stats,
+      cardVersion: cardVersion,
+    })
 
     html = injectMeta(html, {
       title: event.getString('title') + ' — Day that works',
       description: description,
       url: origin + '/events/' + (event.getString('slug') || event.id),
-      image: imageUrl,
-      imageIsDefault: !image,
+      image: resolved.url,
+      imageIsDefault: resolved.isDefault,
     })
   }
 
   return e.html(200, html)
 }
 
-module.exports = { escapeHtml, metaText, buildMeta, injectMeta, serveEventPage }
+module.exports = {
+  escapeHtml,
+  metaText,
+  buildMeta,
+  injectMeta,
+  resolveOgImage,
+  serveEventPage,
+}
