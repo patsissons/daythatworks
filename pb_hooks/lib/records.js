@@ -52,4 +52,18 @@ function isUserAuth(auth) {
   return !!auth && auth.collection().name === 'users'
 }
 
-module.exports = { readDates, normalizeDates, isUserAuth }
+// Slugs with route-level meaning under /events/. Mirrored in
+// src/lib/slug.ts — src/lib/slug.test.ts keeps them in sync.
+const RESERVED_SLUGS = ['new', 'edit', 's']
+
+function isReservedSlug(value) {
+  return RESERVED_SLUGS.indexOf(value) !== -1
+}
+
+module.exports = {
+  readDates,
+  normalizeDates,
+  isUserAuth,
+  RESERVED_SLUGS,
+  isReservedSlug,
+}

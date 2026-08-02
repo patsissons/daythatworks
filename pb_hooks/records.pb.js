@@ -14,6 +14,9 @@ onRecordCreateRequest((e) => {
   if (dates.length < 2) {
     throw new BadRequestError('Pick at least 2 candidate dates.')
   }
+  if (lib.isReservedSlug(e.record.getString('slug'))) {
+    throw new BadRequestError('That link is reserved — pick another.')
+  }
   e.record.set('dates', dates)
   if (lib.isUserAuth(e.auth)) {
     e.record.set('creator', e.auth.id)
@@ -73,6 +76,9 @@ onRecordUpdateRequest((e) => {
   const dates = lib.normalizeDates(lib.readDates(e.record))
   if (dates.length < 2) {
     throw new BadRequestError('Pick at least 2 candidate dates.')
+  }
+  if (lib.isReservedSlug(e.record.getString('slug'))) {
+    throw new BadRequestError('That link is reserved — pick another.')
   }
   e.record.set('dates', dates)
   if (lib.isUserAuth(e.auth)) {

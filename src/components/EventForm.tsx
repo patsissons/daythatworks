@@ -9,7 +9,7 @@ import { isoDate } from '@/lib/dates'
 import { isSlugTaken, pbErrorMessage } from '@/lib/events'
 import { pb } from '@/lib/pocketbase'
 import type { EventsRecord } from '@/lib/pocketbase-types'
-import { isValidSlug, suggestSlug } from '@/lib/slug'
+import { isReservedSlug, isValidSlug, suggestSlug } from '@/lib/slug'
 
 interface EventFormProps {
   /** When set, the form edits this event instead of creating a new one. */
@@ -33,11 +33,15 @@ type ImageSource =
 
 type SlugCheck =
   | { status: 'idle' | 'checking' }
-  | { status: 'available' | 'taken' | 'invalid' | 'error'; slug: string }
+  | {
+      status: 'available' | 'taken' | 'invalid' | 'reserved' | 'error'
+      slug: string
+    }
 
 const SLUG_FORMAT_MESSAGE =
   'Slugs are lowercase letters and numbers separated by hyphens.'
 const SLUG_TAKEN_MESSAGE = 'That link is taken — pick another.'
+const SLUG_RESERVED_MESSAGE = 'That link is reserved — pick another.'
 
 export function EventForm({
   initial,
@@ -99,6 +103,11 @@ export function EventForm({
       setSlugCheck({ status: 'invalid', slug: value })
       return
     }
+    if (isReservedSlug(value)) {
+      slugSeq.current++
+      setSlugCheck({ status: 'reserved', slug: value })
+      return
+    }
     const mySeq = ++slugSeq.current
     setSlugCheck({ status: 'checking' })
     try {
@@ -118,6 +127,7 @@ export function EventForm({
     if (!title.trim()) return 'Give your event a title.'
     if (dates.length < 2) return 'Pick at least 2 candidate dates.'
     if (slug && !isValidSlug(slug)) return SLUG_FORMAT_MESSAGE
+    if (slug && isReservedSlug(slug.trim())) return SLUG_RESERVED_MESSAGE
     if (slug && slugCheck.status === 'taken' && slugCheck.slug === slug) {
       return SLUG_TAKEN_MESSAGE
     }
@@ -219,6 +229,9 @@ export function EventForm({
           )}
           {slugCheck.status === 'invalid' && (
             <span className="text-destructive">{SLUG_FORMAT_MESSAGE}</span>
+          )}
+          {slugCheck.status === 'reserved' && (
+            <span className="text-destructive">{SLUG_RESERVED_MESSAGE}</span>
           )}
           {slugCheck.status === 'error' && (
             <span className="text-muted-foreground">

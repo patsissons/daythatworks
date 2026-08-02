@@ -100,6 +100,23 @@ describe('EventForm slug availability', () => {
     expect(screen.queryByText(/That link is taken/)).not.toBeInTheDocument()
   })
 
+  it('flags reserved slugs inline without querying and blocks submit', async () => {
+    renderForm()
+    await fillValidForm()
+    const input = screen.getByLabelText(/Custom link/)
+    fireEvent.change(input, { target: { value: 'new' } })
+    fireEvent.blur(input)
+    expect(await screen.findByText(/That link is reserved/)).toBeInTheDocument()
+    expect(isSlugTaken).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() =>
+      expect(
+        screen.getAllByText(/That link is reserved/).length,
+      ).toBeGreaterThan(0),
+    )
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
   it('flags invalid formats inline without querying', async () => {
     renderForm()
     const input = screen.getByLabelText(/Custom link/)
