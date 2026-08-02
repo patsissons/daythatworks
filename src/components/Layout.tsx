@@ -1,6 +1,8 @@
 import { Link, Outlet } from 'react-router'
+import { GithubIcon } from '@/components/BrandIcons'
 import { Button } from '@/components/ui/button'
 import { confirmGuestLogout, useAuth } from '@/lib/auth'
+import { GITHUB_URL } from '@/lib/faq'
 
 export function Layout() {
   const { user, isGuest, logout } = useAuth()
@@ -46,15 +48,34 @@ export function Layout() {
         </div>
       </main>
       <footer className="text-muted-foreground shrink-0 border-t py-4 text-center text-sm">
-        Powered by{' '}
-        <a
-          href="https://pockethost.io/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-foreground underline underline-offset-4"
-        >
-          PocketHost
-        </a>
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4">
+          <Link
+            to="/faq"
+            className="hover:text-foreground underline underline-offset-4"
+          >
+            FAQ
+          </Link>
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground inline-flex items-center gap-1.5 underline underline-offset-4"
+          >
+            <GithubIcon className="size-4" />
+            Open source on GitHub
+          </a>
+          <span>
+            Powered by{' '}
+            <a
+              href="https://pockethost.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground underline underline-offset-4"
+            >
+              PocketHost
+            </a>
+          </span>
+        </div>
       </footer>
     </div>
   )

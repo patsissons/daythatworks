@@ -16,3 +16,18 @@ test('home page renders the app shell', async ({ page }) => {
   // fixed shell: the footer is in view without scrolling
   await expect(page.locator('footer')).toBeInViewport()
 })
+
+test('footer links to the FAQ and the open-source repo', async ({ page }) => {
+  await page.goto('/')
+  const footer = page.locator('footer')
+  const github = footer.getByRole('link', { name: 'Open source on GitHub' })
+  await expect(github).toHaveAttribute(
+    'href',
+    'https://github.com/patsissons/daythatworks',
+  )
+  await expect(github).toHaveAttribute('target', '_blank')
+  await footer.getByRole('link', { name: 'FAQ' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Frequently asked questions' }),
+  ).toBeVisible()
+})

@@ -122,7 +122,7 @@ describe('downloadICS', () => {
   })
 
   it('downloads a blob named after the event', () => {
-    const createObjectURL = vi.fn(() => 'blob:mock')
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:mock')
     const revokeObjectURL = vi.fn()
     vi.stubGlobal('URL', {
       ...URL,
@@ -136,7 +136,7 @@ describe('downloadICS', () => {
     downloadICS(EVENT)
 
     expect(createObjectURL).toHaveBeenCalledOnce()
-    const blob = createObjectURL.mock.calls[0][0] as unknown as Blob
+    const blob = createObjectURL.mock.calls[0][0]
     expect(blob.type).toBe('text/calendar;charset=utf-8')
     expect(click).toHaveBeenCalledOnce()
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock')
