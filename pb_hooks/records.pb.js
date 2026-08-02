@@ -9,6 +9,7 @@
 
 onRecordCreateRequest((e) => {
   const lib = require(`${__hooks}/lib/records.js`)
+  const rl = require(`${__hooks}/lib/rate-limit.js`)
   const dates = lib.normalizeDates(lib.readDates(e.record))
   if (dates.length < 2) {
     throw new BadRequestError('Pick at least 2 candidate dates.')
@@ -19,7 +20,52 @@ onRecordCreateRequest((e) => {
     e.record.set('creatorName', e.auth.getString('name'))
     e.record.set('creatorEmail', e.auth.email())
   }
+
+  // Guest creations are budgeted via a sliding 24h window over
+  // guest_event_log; full accounts are unlimited. Quota is only consumed
+  // (logged) after a successful create.
+  let usage = null
+  if (lib.isUserAuth(e.auth) && e.auth.getBool('guest')) {
+    const cfg = rl.config((name) => $os.getenv(name))
+    cfg.warnings.forEach((warning) => console.warn('[rate-limit] ' + warning))
+    const ipHash = rl.hashIp(rl.normalizeIp(e.realIP()), cfg.salt, (s) => $security.sha256(s))
+    const since = rl.cutoff(new Date(), cfg.windowMs)
+    const verdict = rl.decide(
+      {
+        ipCount: e.app.countRecords(
+          'guest_event_log',
+          $dbx.exp('ipHash = {:h} AND created >= {:c}', { h: ipHash, c: since }),
+        ),
+        userCount: e.app.countRecords(
+          'guest_event_log',
+          $dbx.exp('creator = {:u} AND created >= {:c}', { u: e.auth.id, c: since }),
+        ),
+        globalCount: e.app.countRecords(
+          'guest_event_log',
+          $dbx.exp('created >= {:c}', { c: since }),
+        ),
+      },
+      cfg,
+    )
+    if (!verdict.ok) {
+      throw new TooManyRequestsError(rl.limitMessage(verdict.reason))
+    }
+    usage = { ipHash, creator: e.auth.id }
+  }
+
   e.next()
+
+  if (usage) {
+    try {
+      const record = new Record(e.app.findCollectionByNameOrId('guest_event_log'))
+      record.set('ipHash', usage.ipHash)
+      record.set('creator', usage.creator)
+      e.app.save(record)
+    } catch (err) {
+      // fail open: the event exists but isn't counted against the budget
+      console.error('[rate-limit] failed to log guest event creation', err)
+    }
+  }
 }, 'events')
 
 onRecordUpdateRequest((e) => {

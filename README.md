@@ -5,12 +5,13 @@ dates, share the permalink, and everyone marks which days they can make.
 Results roll up per date with a best-day recommendation. Events live at
 `/events/<slug-or-id>` (ULID ids, optional unique vanity slugs) and each
 response has its own permalink at `/events/<slug-or-id>/s/<submission-id>`.
-Creating an event requires signing in (Google/GitHub OAuth); responding
-doesn't — anyone with the link can respond as a guest with just their name
-(a persistent guest identity is kept in the browser so they can edit their
-responses and reuse their name across events). Viewing needs no account. An
-event can hide responder names from the group, and emails are never exposed
-through the public API.
+No account is needed to create events or respond — just a name. Guests get
+a persistent identity kept in the browser so they can edit their events and
+responses; signing in (Google/GitHub OAuth) makes that history durable
+across browsers. Guest event creation is rate limited (sliding 24h window:
+5 per IP, 5 per guest, plus a global daily cap) to keep spam out; signed-in
+users are unlimited. Viewing needs no account. An event can hide responder
+names from the group, and emails are never exposed through the public API.
 
 Live at [https://daythatworks.com](https://daythatworks.com).
 

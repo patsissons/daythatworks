@@ -1,5 +1,9 @@
-import { useNavigate } from 'react-router'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { EventForm } from '@/components/EventForm'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuth } from '@/lib/auth'
 import { newId } from '@/lib/id'
 import { eventPath } from '@/lib/events'
 import { pb } from '@/lib/pocketbase'
@@ -8,7 +12,13 @@ import { usePageTitle } from '@/lib/title'
 
 export function NewEventPage() {
   const navigate = useNavigate()
+  const { user, isGuest, loginAsGuest } = useAuth()
+  const [name, setName] = useState<string>(
+    user && isGuest ? ((user.name as string) ?? '') : '',
+  )
   usePageTitle('New event')
+
+  const needsName = !user || isGuest
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -20,14 +30,51 @@ export function NewEventPage() {
       </div>
       <EventForm
         submitLabel="Create event"
+        extraValidate={() => {
+          if (needsName && !name.trim()) {
+            return "Enter your name so people know who's organizing."
+          }
+          return null
+        }}
         onSubmit={async (form) => {
+          if (!user) {
+            // first-time guest: mint the persistent guest identity, then create
+            await loginAsGuest(name.trim())
+          } else if (isGuest && name.trim() && name.trim() !== user.name) {
+            await pb.collection('users').update(user.id, { name: name.trim() })
+          }
           form.set('id', newId())
           const created = await pb
             .collection('events')
             .create<EventsRecord>(form)
           navigate(eventPath(created))
         }}
-      />
+      >
+        {needsName && (
+          <div className="space-y-2">
+            <Label htmlFor="organizer-name">Your name</Label>
+            <Input
+              id="organizer-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Alex"
+              maxLength={100}
+              className="max-w-60"
+            />
+            <p className="text-muted-foreground text-sm">
+              No account needed — your events are saved in this browser.{' '}
+              <Link
+                to="/login"
+                state={{ from: '/events/new' }}
+                className="underline underline-offset-4"
+              >
+                Sign in instead
+              </Link>{' '}
+              to keep them everywhere.
+            </p>
+          </div>
+        )}
+      </EventForm>
     </div>
   )
 }

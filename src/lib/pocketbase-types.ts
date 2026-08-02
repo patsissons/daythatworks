@@ -36,6 +36,7 @@ export interface UsersRecord {
   email: string
   name: string
   avatar: string
+  guest?: boolean
   created: string
   updated: string
 }

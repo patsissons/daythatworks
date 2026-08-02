@@ -43,7 +43,7 @@ type MineState =
     }
 
 export function HomePage() {
-  const { user } = useAuth()
+  const { user, isGuest } = useAuth()
 
   return (
     <div className="space-y-12">
@@ -53,7 +53,7 @@ export function HomePage() {
         </h1>
         <p className="text-muted-foreground text-lg">
           Propose dates, share a link, and see which day fits your whole group —
-          no accounts required to look, no back-and-forth to decide.
+          no account required, no back-and-forth to decide.
         </p>
         <Button asChild size="lg">
           <Link to="/events/new">
@@ -75,6 +75,16 @@ export function HomePage() {
         ))}
       </section>
 
+      {user && isGuest && (
+        <p className="text-muted-foreground text-center text-sm">
+          You&apos;re browsing as a guest — your events and responses live in
+          this browser only.{' '}
+          <Link to="/login" className="underline underline-offset-4">
+            Sign in
+          </Link>{' '}
+          to keep them.
+        </p>
+      )}
       {user && <YourStuff userId={user.id} />}
     </div>
   )

@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-test('creating an event requires signing in', async ({ page }) => {
+test('the event form is available signed out, with a name field', async ({
+  page,
+}) => {
   await page.goto('/events/new')
-  await expect(
-    page.getByRole('button', { name: 'Continue with Google' }),
-  ).toBeVisible()
+  await expect(page.getByLabel('Your name')).toBeVisible()
+  await expect(page.getByLabel('Title')).toBeVisible()
+  await expect(page.getByText(/No account needed/)).toBeVisible()
 })
 
 test('an unknown event shows a friendly card', async ({ page }) => {
@@ -96,4 +98,30 @@ test('respond as a guest without an account', async ({ page }) => {
   ).toBeVisible()
   await expect(page.getByText(/E2E Guest/).first()).toBeVisible()
   await expect(page.getByText('guest', { exact: true })).toBeVisible()
+})
+
+test('create an event as a guest without an account', async ({ page }) => {
+  test.skip(!process.env.E2E_PB_URL, 'needs a local PocketBase (E2E_PB_URL)')
+
+  await page.goto('/events/new')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+
+  const title = `Guest Create E2E ${Date.now()}`
+  await page.getByLabel('Your name').fill('E2E Organizer')
+  await page.getByLabel('Title').fill(title)
+  await page.getByRole('button', { name: 'Next month' }).click()
+  const days = page.locator('button[aria-label^="20"]:not([disabled])')
+  await days.nth(0).click()
+  await days.nth(1).click()
+  await page.getByRole('button', { name: 'Create event' }).click()
+
+  await expect(page.getByRole('heading', { name: title })).toBeVisible()
+
+  // the guest creator sees their event on the home page
+  await page.goto('/')
+  await expect(page.getByText(/browsing as a guest/)).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: new RegExp(title) }),
+  ).toBeVisible()
 })

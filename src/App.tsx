@@ -16,14 +16,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
-          <Route
-            path="events/new"
-            element={
-              <RequireAuth full>
-                <NewEventPage />
-              </RequireAuth>
-            }
-          />
+          <Route path="events/new" element={<NewEventPage />} />
           <Route path="events/:idOrSlug" element={<EventPage />} />
           <Route
             path="events/:idOrSlug/s/:submissionId"

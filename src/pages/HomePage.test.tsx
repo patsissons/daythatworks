@@ -6,6 +6,7 @@ import { HomePage } from '@/pages/HomePage'
 
 const getFullList = vi.fn()
 let mockUser: AuthRecord | null = null
+let mockIsGuest = false
 
 vi.mock('@/lib/pocketbase', () => ({
   pb: {
@@ -15,7 +16,7 @@ vi.mock('@/lib/pocketbase', () => ({
 }))
 
 vi.mock('@/lib/auth', () => ({
-  useAuth: () => ({ user: mockUser }),
+  useAuth: () => ({ user: mockUser, isGuest: mockIsGuest }),
 }))
 
 function renderPage() {
@@ -30,6 +31,7 @@ describe('HomePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockUser = null
+    mockIsGuest = false
   })
 
   it('renders the hero and create CTA when signed out', () => {
@@ -88,5 +90,18 @@ describe('HomePage', () => {
     renderPage()
     expect(await screen.findByText('Find a day that works')).toBeInTheDocument()
     expect(screen.queryByText('Your events')).not.toBeInTheDocument()
+    expect(screen.queryByText(/browsing as a guest/)).not.toBeInTheDocument()
+  })
+
+  it('nudges guests to sign in to keep their events', async () => {
+    mockUser = { id: 'me' } as AuthRecord
+    mockIsGuest = true
+    getFullList.mockResolvedValue([])
+    renderPage()
+    expect(await screen.findByText(/browsing as a guest/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/login',
+    )
   })
 })

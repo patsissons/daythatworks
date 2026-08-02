@@ -18,6 +18,10 @@ interface EventFormProps {
   onSubmit: (form: FormData) => Promise<void>
   /** Dates that already have responses (warn before removing them). */
   respondedDates?: string[]
+  /** Extra validation run before the built-in checks (e.g. guest name). */
+  extraValidate?: () => string | null
+  /** Rendered as the first form section (e.g. a guest name field). */
+  children?: React.ReactNode
 }
 
 export function EventForm({
@@ -25,6 +29,8 @@ export function EventForm({
   submitLabel,
   onSubmit,
   respondedDates = [],
+  extraValidate,
+  children,
 }: EventFormProps) {
   const [title, setTitle] = useState(initial?.title ?? '')
   const [slug, setSlug] = useState(initial?.slug ?? '')
@@ -59,6 +65,8 @@ export function EventForm({
   )
 
   function validate(): string | null {
+    const extraProblem = extraValidate?.()
+    if (extraProblem) return extraProblem
     if (!title.trim()) return 'Give your event a title.'
     if (dates.length < 2) return 'Pick at least 2 candidate dates.'
     if (slug && !isValidSlug(slug)) {
@@ -95,6 +103,8 @@ export function EventForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {children}
+
       <div className="space-y-2">
         <Label htmlFor="event-title">Title</Label>
         <Input
