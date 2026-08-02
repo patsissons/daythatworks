@@ -11,6 +11,7 @@ import {
 import { confirmGuestLogout, useAuth } from '@/lib/auth'
 import { eventPath } from '@/lib/events'
 import { GITHUB_URL } from '@/lib/faq'
+import { useLoginDialog } from '@/lib/login-dialog'
 import { formatDisplayDate } from '@/lib/dates'
 import { logger } from '@/lib/logger'
 import { pb } from '@/lib/pocketbase'
@@ -45,6 +46,7 @@ type MineState =
 
 export function HomePage() {
   const { user, isGuest, logout } = useAuth()
+  const { openLogin } = useLoginDialog()
 
   return (
     <div className="space-y-12">
@@ -92,9 +94,13 @@ export function HomePage() {
         <p className="text-muted-foreground text-center text-sm">
           You&apos;re browsing as a guest — your events and responses live in
           this browser only.{' '}
-          <Link to="/login" className="underline underline-offset-4">
+          <button
+            type="button"
+            className="cursor-pointer underline underline-offset-4"
+            onClick={() => openLogin()}
+          >
             Sign in
-          </Link>{' '}
+          </button>{' '}
           to keep them, or{' '}
           <button
             type="button"

@@ -1,101 +1,37 @@
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { GithubIcon, GoogleIcon } from '@/components/BrandIcons'
+import { HomePage } from '@/pages/HomePage'
 import { useAuth } from '@/lib/auth'
+import { useLoginDialog } from '@/lib/login-dialog'
 import { usePageTitle } from '@/lib/title'
 
-const devAuthEnabled =
-  import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH === 'true'
-
+/**
+ * Deep-link / RequireAuth entry point: normal in-app "Log in" buttons open
+ * the dialog over the current page without navigating; this route exists so
+ * /login links still work. It shows the home page with the dialog on top,
+ * then continues to `state.from` after a successful login.
+ */
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const auth = useAuth()
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { user } = useAuth()
+  const { openLogin } = useLoginDialog()
+  const opened = useRef(false)
   usePageTitle('Log in')
 
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
-  async function guard(action: () => Promise<void>) {
-    setBusy(true)
-    setError(null)
-    try {
-      await action()
-    } finally {
-      setBusy(false)
+  useEffect(() => {
+    if (opened.current) return
+    opened.current = true
+    if (user) {
+      navigate(from, { replace: true })
+      return
     }
-  }
+    // dismissing goes home (not back to `from` — that could bounce straight
+    // back here via RequireAuth); success continues to `from`
+    openLogin((loggedIn) => navigate(loggedIn ? from : '/', { replace: true }))
+  }, [user, from, navigate, openLogin])
 
-  async function onOAuth(provider: string) {
-    await guard(async () => {
-      try {
-        await auth.loginWithOAuth(provider)
-        navigate(from, { replace: true })
-      } catch {
-        setError(`Could not sign in with ${provider}.`)
-      }
-    })
-  }
-
-  async function onDevLogin() {
-    await guard(async () => {
-      try {
-        await auth.loginWithDev()
-        navigate(from, { replace: true })
-      } catch {
-        setError('Dev login failed — is DEV_AUTH=true set on pocketbase?')
-      }
-    })
-  }
-
-  return (
-    <div className="mx-auto max-w-sm">
-      <Card>
-        <CardHeader>
-          <CardTitle>Log in</CardTitle>
-          <CardDescription>Welcome back to Day that works</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={busy}
-            onClick={() => onOAuth('google')}
-          >
-            <GoogleIcon className="size-4" />
-            Continue with Google
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={busy}
-            onClick={() => onOAuth('github')}
-          >
-            <GithubIcon className="size-4" />
-            Continue with GitHub
-          </Button>
-          {devAuthEnabled && (
-            <Button
-              variant="secondary"
-              className="w-full"
-              disabled={busy}
-              onClick={onDevLogin}
-            >
-              Dev login
-            </Button>
-          )}
-          {error && <p className="text-destructive text-sm">{error}</p>}
-        </CardContent>
-      </Card>
-    </div>
-  )
+  return <HomePage />
 }

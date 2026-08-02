@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { EventForm } from '@/components/EventForm'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth'
 import { newId } from '@/lib/id'
 import { eventPath } from '@/lib/events'
+import { useLoginDialog } from '@/lib/login-dialog'
 import { pb } from '@/lib/pocketbase'
 import type { EventsRecord } from '@/lib/pocketbase-types'
 import { usePageTitle } from '@/lib/title'
@@ -13,6 +14,7 @@ import { usePageTitle } from '@/lib/title'
 export function NewEventPage() {
   const navigate = useNavigate()
   const { user, isGuest, loginAsGuest } = useAuth()
+  const { openLogin } = useLoginDialog()
   const [name, setName] = useState<string>(
     user && isGuest ? ((user.name as string) ?? '') : '',
   )
@@ -64,13 +66,13 @@ export function NewEventPage() {
             />
             <p className="text-muted-foreground text-sm">
               No account needed — your events are saved in this browser.{' '}
-              <Link
-                to="/login"
-                state={{ from: '/events/new' }}
-                className="underline underline-offset-4"
+              <button
+                type="button"
+                className="cursor-pointer underline underline-offset-4"
+                onClick={() => openLogin()}
               >
                 Sign in instead
-              </Link>{' '}
+              </button>{' '}
               to keep them everywhere.
             </p>
           </div>

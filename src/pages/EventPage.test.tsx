@@ -70,6 +70,12 @@ vi.mock('@/lib/auth', () => ({
   }),
 }))
 
+const openLogin = vi.fn()
+
+vi.mock('@/lib/login-dialog', () => ({
+  useLoginDialog: () => ({ openLogin }),
+}))
+
 function renderPage(path = '/events/summer-bbq') {
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -122,7 +128,7 @@ describe('EventPage', () => {
     renderPage()
     expect(await screen.findByLabelText('Your name')).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: 'Sign in instead' }),
+      screen.getByRole('button', { name: 'Sign in instead' }),
     ).toBeInTheDocument()
   })
 

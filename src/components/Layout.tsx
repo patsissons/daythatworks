@@ -3,9 +3,11 @@ import { GithubIcon } from '@/components/BrandIcons'
 import { Button } from '@/components/ui/button'
 import { confirmGuestLogout, useAuth } from '@/lib/auth'
 import { GITHUB_URL } from '@/lib/faq'
+import { useLoginDialog } from '@/lib/login-dialog'
 
 export function Layout() {
   const { user, isGuest, logout } = useAuth()
+  const { openLogin } = useLoginDialog()
 
   function onLogout() {
     if (isGuest && !confirmGuestLogout()) return
@@ -35,8 +37,8 @@ export function Layout() {
                 </Button>
               </>
             ) : (
-              <Button asChild size="sm">
-                <Link to="/login">Log in</Link>
+              <Button size="sm" onClick={() => openLogin()}>
+                Log in
               </Button>
             )}
           </nav>

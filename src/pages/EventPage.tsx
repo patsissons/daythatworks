@@ -29,6 +29,7 @@ import {
 } from '@/lib/events'
 import { newId } from '@/lib/id'
 import { logger } from '@/lib/logger'
+import { useLoginDialog } from '@/lib/login-dialog'
 import { pb } from '@/lib/pocketbase'
 import { usePageTitle } from '@/lib/title'
 import type { EventsRecord, SubmissionsRecord } from '@/lib/pocketbase-types'
@@ -248,6 +249,7 @@ function RespondSection({
   onSaved: () => Promise<void>
 }) {
   const { user, isGuest, loginAsGuest } = useAuth()
+  const { openLogin } = useLoginDialog()
   const mine = submissions.find(
     (submission) => submission.submitter === user?.id,
   )
@@ -350,13 +352,13 @@ function RespondSection({
           {!user && (
             <p className="text-muted-foreground text-sm">
               Have an account?{' '}
-              <Link
-                to="/login"
-                state={{ from: eventPath(event) }}
-                className="underline underline-offset-2"
+              <button
+                type="button"
+                className="cursor-pointer underline underline-offset-2"
+                onClick={() => openLogin()}
               >
                 Sign in instead
-              </Link>
+              </button>
             </p>
           )}
           {error && <p className="text-destructive text-sm">{error}</p>}

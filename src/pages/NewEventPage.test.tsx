@@ -20,6 +20,10 @@ vi.mock('@/lib/pocketbase', () => ({
   },
 }))
 
+vi.mock('@/lib/login-dialog', () => ({
+  useLoginDialog: () => ({ openLogin: vi.fn() }),
+}))
+
 vi.mock('@/lib/auth', () => ({
   useAuth: () => ({
     user: auth.user,

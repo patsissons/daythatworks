@@ -17,6 +17,10 @@ vi.mock('@/lib/pocketbase', () => ({
   },
 }))
 
+vi.mock('@/lib/login-dialog', () => ({
+  useLoginDialog: () => ({ openLogin: vi.fn() }),
+}))
+
 vi.mock('@/lib/auth', () => ({
   useAuth: () => ({ user: mockUser, isGuest: mockIsGuest, logout }),
   confirmGuestLogout: (...args: unknown[]) => confirmGuestLogout(...args),
@@ -102,10 +106,7 @@ describe('HomePage', () => {
     getFullList.mockResolvedValue([])
     renderPage()
     expect(await screen.findByText(/browsing as a guest/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
-      'href',
-      '/login',
-    )
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
   })
 
   it('erases the guest identity after confirmation', async () => {
