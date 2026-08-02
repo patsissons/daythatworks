@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { AvailabilityResults } from '@/components/AvailabilityResults'
+import {
+  AvailabilityRecommendation,
+  AvailabilityResults,
+} from '@/components/AvailabilityResults'
 import { aggregateAvailability } from '@/lib/availability'
 
 const DATES = ['2026-08-01', '2026-08-02']
@@ -18,12 +21,17 @@ function renderResults(
   submissions = SUBMISSIONS,
   focusedSubmissionId?: string,
 ) {
+  const result = aggregateAvailability(DATES, submissions)
+  // the recommendation banner renders alongside the list on the event page
   return render(
-    <AvailabilityResults
-      result={aggregateAvailability(DATES, submissions)}
-      submissions={submissions}
-      focusedSubmissionId={focusedSubmissionId}
-    />,
+    <>
+      <AvailabilityRecommendation result={result} />
+      <AvailabilityResults
+        result={result}
+        submissions={submissions}
+        focusedSubmissionId={focusedSubmissionId}
+      />
+    </>,
   )
 }
 

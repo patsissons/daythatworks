@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { CalendarDays, Pencil } from 'lucide-react'
-import { AvailabilityResults } from '@/components/AvailabilityResults'
+import { CalendarDays, List, Pencil } from 'lucide-react'
+import { AvailabilityHeatmap } from '@/components/AvailabilityHeatmap'
+import {
+  AvailabilityRecommendation,
+  AvailabilityResults,
+} from '@/components/AvailabilityResults'
 import { CopyLinkButton } from '@/components/CopyLinkButton'
 import { DateToggleChips } from '@/components/DateToggleChips'
 import { Button } from '@/components/ui/button'
@@ -60,6 +64,9 @@ function EventContent({
 }) {
   const { user } = useAuth()
   const [state, setState] = useState<EventState>({ status: 'loading' })
+  const [resultsView, setResultsView] = useState<'calendar' | 'list'>(
+    'calendar',
+  )
   usePageTitle(state.status === 'ready' ? state.event.title : undefined)
 
   const load = useCallback(() => {
@@ -169,20 +176,61 @@ function EventContent({
       </header>
 
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <CalendarDays className="size-5" aria-hidden />
-          Which day works?
-        </h2>
-        <AvailabilityResults
-          result={result}
-          submissions={submissions.map((submission) => ({
-            id: submission.id,
-            submitterName: submission.submitterName ?? '',
-            dates: submission.dates ?? [],
-          }))}
-          focusedSubmissionId={submissionId}
-          event={event}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <CalendarDays className="size-5" aria-hidden />
+            Which day works?
+          </h2>
+          <div
+            role="group"
+            aria-label="Results view"
+            className="flex gap-0.5 rounded-lg border p-0.5"
+          >
+            <Button
+              type="button"
+              variant={resultsView === 'calendar' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={resultsView === 'calendar'}
+              onClick={() => setResultsView('calendar')}
+            >
+              <CalendarDays />
+              Calendar
+            </Button>
+            <Button
+              type="button"
+              variant={resultsView === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={resultsView === 'list'}
+              onClick={() => setResultsView('list')}
+            >
+              <List />
+              List
+            </Button>
+          </div>
+        </div>
+        <AvailabilityRecommendation result={result} />
+        {resultsView === 'calendar' ? (
+          <AvailabilityHeatmap
+            result={result}
+            submissions={submissions.map((submission) => ({
+              id: submission.id,
+              submitterName: submission.submitterName ?? '',
+              dates: submission.dates ?? [],
+            }))}
+            focusedSubmissionId={submissionId}
+          />
+        ) : (
+          <AvailabilityResults
+            result={result}
+            submissions={submissions.map((submission) => ({
+              id: submission.id,
+              submitterName: submission.submitterName ?? '',
+              dates: submission.dates ?? [],
+            }))}
+            focusedSubmissionId={submissionId}
+            event={event}
+          />
+        )}
       </section>
 
       <RespondSection event={event} submissions={submissions} onSaved={load} />

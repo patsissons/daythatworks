@@ -15,6 +15,26 @@ interface AvailabilityResultsProps {
   event?: Pick<EventsRecord, 'id' | 'title' | 'description' | 'slug'>
 }
 
+/** The "X works best" banner, shared by the list and calendar views. */
+export function AvailabilityRecommendation({
+  result,
+}: {
+  result: AvailabilityResult
+}) {
+  return (
+    <p
+      className={cn(
+        'rounded-lg border px-4 py-3 text-sm',
+        result.bestDates.length > 0
+          ? 'border-primary/30 bg-primary/5 font-medium'
+          : 'text-muted-foreground',
+      )}
+    >
+      {recommendation(result)}
+    </p>
+  )
+}
+
 function recommendation(result: AvailabilityResult): string {
   const { totalSubmissions, bestDates, bestCount } = result
   if (totalSubmissions === 0) {
@@ -44,17 +64,6 @@ export function AvailabilityResults({
   return (
     <AvatarPopoverGroup>
       <div className="space-y-4">
-        <p
-          className={cn(
-            'rounded-lg border px-4 py-3 text-sm',
-            result.bestDates.length > 0
-              ? 'border-primary/30 bg-primary/5 font-medium'
-              : 'text-muted-foreground',
-          )}
-        >
-          {recommendation(result)}
-        </p>
-
         <ul className="space-y-3">
           {result.perDate.map(({ date, count, submissionIds }) => {
             const isBest = result.bestDates.includes(date)

@@ -92,16 +92,30 @@ describe('EventPage', () => {
     getFullList.mockResolvedValue(SUBMISSIONS)
   })
 
-  it('renders results with counts and the best-day recommendation', async () => {
+  it('defaults to the calendar heatmap with the best-day recommendation', async () => {
     renderPage()
     expect(await screen.findByText('Summer BBQ')).toBeInTheDocument()
     expect(
       screen.getByText('Sun, Aug 2 works best — 2 of 2 people can make it.'),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: 'Sun, Aug 2 — 2 of 2 available (best day)',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Organized by Ada Lovelace/)).toBeInTheDocument()
+  })
+
+  it('switches to the list view with counts via the toggle', async () => {
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    fireEvent.click(screen.getByRole('button', { name: 'List' }))
     expect(screen.getByText('1/2')).toBeInTheDocument()
     expect(screen.getByText('2/2')).toBeInTheDocument()
     expect(screen.getByText('0/2')).toBeInTheDocument()
-    expect(screen.getByText(/Organized by Ada Lovelace/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Calendar' }))
+    expect(screen.queryByText('1/2')).not.toBeInTheDocument()
+    expect(screen.getByText('August 2026')).toBeInTheDocument()
   })
 
   it('offers guest responses with a name field when signed out', async () => {
@@ -147,7 +161,7 @@ describe('EventPage', () => {
     fireEvent.change(screen.getByLabelText('Your name'), {
       target: { value: 'Guest Gal' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /^Sat, Aug 1/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     expect(loginAsGuest).toHaveBeenCalledWith('Guest Gal')
@@ -166,7 +180,7 @@ describe('EventPage', () => {
     create.mockResolvedValue({})
     renderPage()
     await screen.findByText('Summer BBQ')
-    fireEvent.click(screen.getByRole('button', { name: /^Sat, Aug 1/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     const payload = create.mock.calls[0][0] as Record<string, string>
@@ -186,7 +200,7 @@ describe('EventPage', () => {
     const updateButton = screen.getByRole('button', {
       name: 'Update availability',
     })
-    fireEvent.click(screen.getByRole('button', { name: /^Mon, Aug 3/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mon, Aug 3' }))
     fireEvent.click(updateButton)
     await waitFor(() => expect(update).toHaveBeenCalledTimes(1))
     expect(update.mock.calls[0][0]).toBe(SUBMISSIONS[0].id)
@@ -209,6 +223,8 @@ describe('EventPage', () => {
     )
     renderPage()
     await screen.findByText('Summer BBQ')
+    expect(screen.getByText('2 responses (names hidden)')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'List' }))
     expect(
       screen.queryByRole('button', { name: 'Name hidden' }),
     ).not.toBeInTheDocument()

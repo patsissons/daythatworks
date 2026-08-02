@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { initials } from '@/lib/initials'
 import { cn } from '@/lib/utils'
 
 // Coordinates a group of avatars so at most one name popover is open:
@@ -35,11 +36,6 @@ interface InitialsAvatarProps {
   /** Empty when the member's name is hidden. */
   name: string
   className?: string
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).slice(0, 2)
-  return parts.map((part) => part[0]?.toUpperCase() ?? '').join('')
 }
 
 export function InitialsAvatar({ name, className }: InitialsAvatarProps) {

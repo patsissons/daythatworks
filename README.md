@@ -2,7 +2,9 @@
 
 Find a day that works for your whole group: create an event with candidate
 dates, share the permalink, and everyone marks which days they can make.
-Results roll up per date with a best-day recommendation. Events live at
+Results roll up per date with a best-day recommendation, shown as a calendar
+heatmap (days shaded by how many people can make them, with two-way hover
+linking between days and responders) or a detailed list view. Events live at
 `/events/<slug-or-id>` (ULID ids, optional unique vanity slugs) and each
 response has its own permalink at `/events/<slug-or-id>/s/<submission-id>`.
 No account is needed to create events or respond — just a name. Guests get
