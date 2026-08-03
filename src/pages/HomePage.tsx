@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card'
 import { confirmGuestLogout, useAuth } from '@/lib/auth'
 import { eventPath } from '@/lib/events'
-import { GITHUB_URL } from '@/lib/faq'
 import { useLoginDialog } from '@/lib/login-dialog'
 import { formatDisplayDate } from '@/lib/dates'
 import { logger } from '@/lib/logger'
@@ -64,18 +63,6 @@ export function HomePage() {
             Create an event
           </Link>
         </Button>
-        <p className="text-muted-foreground text-sm">
-          Free and{' '}
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-4"
-          >
-            open source
-          </a>{' '}
-          — and it never reads anyone&apos;s calendar.
-        </p>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
