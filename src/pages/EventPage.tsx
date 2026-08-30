@@ -8,6 +8,8 @@ import {
 } from '@/components/AvailabilityResults'
 import { CopyLinkButton } from '@/components/CopyLinkButton'
 import { DateToggleChips } from '@/components/DateToggleChips'
+import { QrCodeButton } from '@/components/QrCodeButton'
+import { ShareButton } from '@/components/ShareButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -157,12 +159,22 @@ function EventContent({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <CopyLinkButton url={window.location.origin + eventPath(event)} />
+            <ShareButton
+              url={window.location.origin + eventPath(event)}
+              title={event.title}
+            />
+            <QrCodeButton
+              url={window.location.origin + eventPath(event)}
+              title={event.title}
+            />
+            <CopyLinkButton
+              url={window.location.origin + eventPath(event)}
+              iconOnly
+            />
             {isCreator && (
-              <Button asChild variant="outline" size="sm">
-                <Link to={`${eventPath(event)}/edit`}>
+              <Button asChild variant="outline" size="icon" className="size-8">
+                <Link to={`${eventPath(event)}/edit`} aria-label="Edit">
                   <Pencil />
-                  Edit
                 </Link>
               </Button>
             )}
