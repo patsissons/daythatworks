@@ -4,6 +4,8 @@
 export interface SubmissionSummary {
   id: string
   submitterName: string
+  /** Empty (or absent) when the submitter has no avatar or it's hidden. */
+  submitterAvatarUrl?: string
   dates: string[]
 }
 

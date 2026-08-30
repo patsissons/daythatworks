@@ -24,6 +24,7 @@ export interface SubmissionsRecord {
   submitter: string
   submitterName: string
   submitterEmail: string
+  submitterAvatarUrl: string
   dates: string[]
   created: string
   updated: string
@@ -37,6 +38,7 @@ export interface UsersRecord {
   email: string
   name: string
   avatar: string
+  avatarUrl: string
   guest?: boolean
   created: string
   updated: string

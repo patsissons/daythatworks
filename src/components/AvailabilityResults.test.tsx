@@ -4,7 +4,10 @@ import {
   AvailabilityRecommendation,
   AvailabilityResults,
 } from '@/components/AvailabilityResults'
-import { aggregateAvailability } from '@/lib/availability'
+import {
+  aggregateAvailability,
+  type SubmissionSummary,
+} from '@/lib/availability'
 
 const DATES = ['2026-08-01', '2026-08-02']
 
@@ -18,7 +21,7 @@ const SUBMISSIONS = [
 ]
 
 function renderResults(
-  submissions = SUBMISSIONS,
+  submissions: SubmissionSummary[] = SUBMISSIONS,
   focusedSubmissionId?: string,
 ) {
   const result = aggregateAvailability(DATES, submissions)
@@ -70,6 +73,36 @@ describe('AvailabilityResults', () => {
     expect(
       screen.getAllByRole('button', { name: 'Ada Lovelace' }).length,
     ).toBeGreaterThan(0)
+    expect(screen.getAllByText('AL').length).toBeGreaterThan(0)
+  })
+
+  it('shows the avatar image when a URL is present', () => {
+    renderResults([
+      {
+        id: 's1',
+        submitterName: 'Ada Lovelace',
+        submitterAvatarUrl: 'https://example.com/ada.png',
+        dates: ['2026-08-01'],
+      },
+    ])
+    const chip = screen.getAllByRole('button', { name: 'Ada Lovelace' })[0]
+    const img = chip.querySelector('img')
+    expect(img).toHaveAttribute('src', 'https://example.com/ada.png')
+    expect(screen.queryByText('AL')).not.toBeInTheDocument()
+  })
+
+  it('falls back to initials when the avatar image fails to load', () => {
+    renderResults([
+      {
+        id: 's1',
+        submitterName: 'Ada Lovelace',
+        submitterAvatarUrl: 'https://example.com/broken.png',
+        dates: ['2026-08-01'],
+      },
+    ])
+    const chip = screen.getAllByRole('button', { name: 'Ada Lovelace' })[0]
+    fireEvent.error(chip.querySelector('img')!)
+    expect(chip.querySelector('img')).not.toBeInTheDocument()
     expect(screen.getAllByText('AL').length).toBeGreaterThan(0)
   })
 

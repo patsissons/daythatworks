@@ -28,6 +28,7 @@ const SUBMISSIONS: SubmissionsRecord[] = [
     submitter: 'user-grace',
     submitterName: 'Grace Hopper',
     submitterEmail: '',
+    submitterAvatarUrl: 'https://example.com/grace.png',
     dates: ['2026-08-02'],
     created: '',
     updated: '',
@@ -38,6 +39,7 @@ const SUBMISSIONS: SubmissionsRecord[] = [
     submitter: 'user-alan',
     submitterName: 'Alan Turing',
     submitterEmail: '',
+    submitterAvatarUrl: '',
     dates: ['2026-08-01', '2026-08-02'],
     created: '',
     updated: '',
@@ -223,13 +225,32 @@ describe('EventPage', () => {
     expect(screen.getByRole('link', { name: /Edit/ })).toBeInTheDocument()
   })
 
+  it('renders avatar images for submitters that have one', async () => {
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    const grace = screen.getByRole('button', { name: 'Grace Hopper' })
+    expect(grace.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://example.com/grace.png',
+    )
+    const alan = screen.getByRole('button', { name: 'Alan Turing' })
+    expect(alan.querySelector('img')).not.toBeInTheDocument()
+    expect(alan).toHaveTextContent('AT')
+  })
+
   it('renders hidden-names submissions without chips', async () => {
+    // the enrich hook hides submitterAvatarUrl whenever it hides submitterName
     getFullList.mockResolvedValue(
-      SUBMISSIONS.map((submission) => ({ ...submission, submitterName: '' })),
+      SUBMISSIONS.map((submission) => ({
+        ...submission,
+        submitterName: '',
+        submitterAvatarUrl: '',
+      })),
     )
     renderPage()
     await screen.findByText('Summer BBQ')
     expect(screen.getByText('2 responses (names hidden)')).toBeInTheDocument()
+    expect(document.querySelector('img')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'List' }))
     expect(
       screen.queryByRole('button', { name: 'Name hidden' }),

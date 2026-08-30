@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { resolveAvatarSrc } from '@/lib/avatar'
 import { initials } from '@/lib/initials'
 import { cn } from '@/lib/utils'
 
@@ -32,13 +33,43 @@ export function AvatarPopoverGroup({ children }: { children: ReactNode }) {
   )
 }
 
-interface InitialsAvatarProps {
+interface AvatarFaceProps {
   /** Empty when the member's name is hidden. */
   name: string
+  /** Provider avatar image; falls back to initials when absent or broken. */
+  avatarUrl?: string
+}
+
+/** The face inside an avatar chip: provider image, initials, or a person icon. */
+export function AvatarFace({ name, avatarUrl }: AvatarFaceProps) {
+  const [failedUrl, setFailedUrl] = useState<string>()
+  if (avatarUrl && avatarUrl !== failedUrl) {
+    return (
+      <img
+        src={resolveAvatarSrc(avatarUrl)}
+        alt=""
+        referrerPolicy="no-referrer"
+        className="size-full rounded-full object-cover"
+        onError={() => setFailedUrl(avatarUrl)}
+      />
+    )
+  }
+  return name ? (
+    <>{initials(name)}</>
+  ) : (
+    <User className="size-3.5" aria-hidden />
+  )
+}
+
+interface InitialsAvatarProps extends AvatarFaceProps {
   className?: string
 }
 
-export function InitialsAvatar({ name, className }: InitialsAvatarProps) {
+export function InitialsAvatar({
+  name,
+  avatarUrl,
+  className,
+}: InitialsAvatarProps) {
   const id = useId()
   const group = useContext(AvatarPopoverContext)
   const [localOpen, setLocalOpen] = useState(false)
@@ -70,12 +101,12 @@ export function InitialsAvatar({ name, className }: InitialsAvatarProps) {
             if (e.pointerType !== 'touch') setOpen(false)
           }}
           className={cn(
-            'bg-secondary text-secondary-foreground grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border text-[10px] font-medium transition-shadow',
+            'bg-secondary text-secondary-foreground grid size-6 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-full border text-[10px] font-medium transition-shadow',
             'hover:ring-ring/50 focus-visible:ring-ring/50 hover:ring-2 focus-visible:ring-2 focus-visible:outline-none',
             className,
           )}
         >
-          {name ? initials(name) : <User className="size-3.5" aria-hidden />}
+          <AvatarFace name={name} avatarUrl={avatarUrl} />
         </button>
       </PopoverTrigger>
       <PopoverContent

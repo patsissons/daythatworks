@@ -113,6 +113,7 @@ export function AvailabilityResults({
                       <InitialsAvatar
                         key={submissionId}
                         name={byId.get(submissionId)?.submitterName ?? ''}
+                        avatarUrl={byId.get(submissionId)?.submitterAvatarUrl}
                         className={cn(
                           submissionId === focusedSubmissionId &&
                             'ring-ring ring-2',

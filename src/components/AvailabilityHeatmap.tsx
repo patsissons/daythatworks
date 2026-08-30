@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { initials } from '@/lib/initials'
+import { AvatarFace } from '@/components/InitialsAvatar'
 import type { AvailabilityResult, SubmissionSummary } from '@/lib/availability'
 import { formatDisplayDate, monthGrid, monthLabel } from '@/lib/dates'
 import { cn } from '@/lib/utils'
@@ -223,12 +223,15 @@ export function AvailabilityHeatmap({
                     <span
                       aria-hidden
                       className={cn(
-                        'bg-secondary text-secondary-foreground grid size-6 shrink-0 place-items-center rounded-full border text-[10px] font-medium',
+                        'bg-secondary text-secondary-foreground grid size-6 shrink-0 place-items-center overflow-hidden rounded-full border text-[10px] font-medium',
                         submission.id === focusedSubmissionId &&
                           'ring-ring ring-2',
                       )}
                     >
-                      {initials(submission.submitterName)}
+                      <AvatarFace
+                        name={submission.submitterName}
+                        avatarUrl={submission.submitterAvatarUrl}
+                      />
                     </span>
                     <span className="truncate">
                       {submission.submitterName || 'Anonymous'}

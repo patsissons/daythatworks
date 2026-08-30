@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { AvailabilityHeatmap } from '@/components/AvailabilityHeatmap'
-import { aggregateAvailability } from '@/lib/availability'
+import {
+  aggregateAvailability,
+  type SubmissionSummary,
+} from '@/lib/availability'
 
 const DATES = ['2026-08-01', '2026-08-02', '2026-09-05']
 
@@ -15,7 +18,7 @@ const SUBMISSIONS = [
 ]
 
 function renderHeatmap(
-  submissions = SUBMISSIONS,
+  submissions: SubmissionSummary[] = SUBMISSIONS,
   focusedSubmissionId?: string,
 ) {
   return render(
@@ -87,6 +90,26 @@ describe('AvailabilityHeatmap', () => {
   it('persistently outlines the focused submission when idle', () => {
     renderHeatmap(SUBMISSIONS, 's1')
     expect(cell(/Aug 1/).className).toContain('outline-dashed')
+  })
+
+  it('renders an avatar image in the responder chip when a URL is present', () => {
+    renderHeatmap([
+      {
+        id: 's1',
+        submitterName: 'Ada Lovelace',
+        submitterAvatarUrl: 'https://example.com/ada.png',
+        dates: ['2026-08-01'],
+      },
+      { id: 's2', submitterName: 'Grace Hopper', dates: ['2026-08-02'] },
+    ])
+    const ada = screen.getByRole('button', { name: 'Ada Lovelace' })
+    expect(ada.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://example.com/ada.png',
+    )
+    const grace = screen.getByRole('button', { name: 'Grace Hopper' })
+    expect(grace.querySelector('img')).not.toBeInTheDocument()
+    expect(grace).toHaveTextContent('GH')
   })
 
   it('handles hidden names with a count instead of a list', () => {

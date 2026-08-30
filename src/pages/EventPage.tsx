@@ -130,14 +130,13 @@ function EventContent({
 
   const { event, submissions } = state
   const isCreator = user?.id === event.creator
-  const result = aggregateAvailability(
-    event.dates,
-    submissions.map((submission) => ({
-      id: submission.id,
-      submitterName: submission.submitterName ?? '',
-      dates: submission.dates ?? [],
-    })),
-  )
+  const summaries = submissions.map((submission) => ({
+    id: submission.id,
+    submitterName: submission.submitterName ?? '',
+    submitterAvatarUrl: submission.submitterAvatarUrl ?? '',
+    dates: submission.dates ?? [],
+  }))
+  const result = aggregateAvailability(event.dates, summaries)
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -213,21 +212,13 @@ function EventContent({
         {resultsView === 'calendar' ? (
           <AvailabilityHeatmap
             result={result}
-            submissions={submissions.map((submission) => ({
-              id: submission.id,
-              submitterName: submission.submitterName ?? '',
-              dates: submission.dates ?? [],
-            }))}
+            submissions={summaries}
             focusedSubmissionId={submissionId}
           />
         ) : (
           <AvailabilityResults
             result={result}
-            submissions={submissions.map((submission) => ({
-              id: submission.id,
-              submitterName: submission.submitterName ?? '',
-              dates: submission.dates ?? [],
-            }))}
+            submissions={summaries}
             focusedSubmissionId={submissionId}
             event={event}
           />
