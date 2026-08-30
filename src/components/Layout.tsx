@@ -15,8 +15,8 @@ export function Layout() {
   }
 
   return (
-    <div className="bg-background text-foreground flex h-screen flex-col overflow-hidden supports-[height:100dvh]:h-dvh">
-      <header className="shrink-0 border-b">
+    <div className="bg-background text-foreground flex min-h-screen flex-col supports-[min-height:100dvh]:min-h-dvh">
+      <header className="bg-background sticky top-0 z-40 border-b">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
           <Link to="/" className="font-semibold">
             Day that works
@@ -44,12 +44,12 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+      <main className="flex-1">
         <div className="mx-auto w-full max-w-5xl px-4 py-8">
           <Outlet />
         </div>
       </main>
-      <footer className="text-muted-foreground shrink-0 border-t py-4 text-center text-sm">
+      <footer className="text-muted-foreground border-t py-4 text-center text-sm">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4">
           <Link
             to="/faq"

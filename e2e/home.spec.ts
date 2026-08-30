@@ -13,8 +13,25 @@ test('home page renders the app shell', async ({ page }) => {
   const pockethost = page.getByRole('link', { name: 'PocketHost' })
   await expect(pockethost).toHaveAttribute('href', 'https://pockethost.io/')
   await expect(pockethost).toHaveAttribute('target', '_blank')
-  // fixed shell: the footer is in view without scrolling
+  // short pages: min-height flex keeps the footer at the viewport bottom
   await expect(page.locator('footer')).toBeInViewport()
+})
+
+test('long pages scroll the document with a sticky header', async ({
+  page,
+}) => {
+  await page.goto('/faq')
+  await expect(
+    page.getByRole('heading', { name: 'Frequently asked questions' }),
+  ).toBeVisible()
+  const footer = page.locator('footer')
+  await expect(footer).not.toBeInViewport()
+  await footer.scrollIntoViewIfNeeded()
+  await expect(footer).toBeInViewport()
+  // the window itself scrolls (no inner scroll pane)...
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+  // ...while the header stays pinned
+  await expect(page.getByRole('banner')).toBeInViewport()
 })
 
 test('footer links to the FAQ and the open-source repo', async ({ page }) => {
