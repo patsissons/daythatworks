@@ -102,9 +102,11 @@ onRecordCreateRequest((e) => {
   }
   e.record.set('dates', dates)
   if (lib.isUserAuth(e.auth)) {
+    const avatars = require(`${__hooks}/lib/avatars.js`)
     e.record.set('submitter', e.auth.id)
     e.record.set('submitterName', e.auth.getString('name'))
     e.record.set('submitterEmail', e.auth.email())
+    e.record.set('submitterAvatarUrl', avatars.resolveAvatarUrl(e.auth))
   }
   e.next()
 }, 'submissions')
@@ -123,9 +125,11 @@ onRecordUpdateRequest((e) => {
   }
   e.record.set('dates', dates)
   if (lib.isUserAuth(e.auth)) {
+    const avatars = require(`${__hooks}/lib/avatars.js`)
     e.record.set('submitter', e.record.original().getString('submitter'))
     e.record.set('submitterName', e.auth.getString('name'))
     e.record.set('submitterEmail', e.auth.email())
+    e.record.set('submitterAvatarUrl', avatars.resolveAvatarUrl(e.auth))
   }
   e.next()
 }, 'submissions')
@@ -163,6 +167,7 @@ onRecordEnrich((e) => {
     e.record.hide('submitterEmail')
     if (!event || event.getBool('hideNames')) {
       e.record.hide('submitterName')
+      e.record.hide('submitterAvatarUrl')
     }
   }
   e.next()
