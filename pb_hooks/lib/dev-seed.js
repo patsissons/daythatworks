@@ -1,8 +1,13 @@
-// Local-dev seeding (used by pb_hooks/dev-seed.pb.js): ensure a demo event
-// exists at /events/test so a local frontend always has something to open.
+// Local-dev seeding (used by pb_hooks/dev-seed.pb.js): ensure demo events
+// exist at /events/test (specific dates) and /events/test-weekly (days of the
+// week) so a local frontend always has something to open.
 // Runs only when DEV_AUTH=true — never on PocketHost.
 
 var SLUG = 'test'
+var WEEKLY_SLUG = 'test-weekly'
+
+/** Candidate days for the weekly seed (Sunday-first, like records.js). */
+var WEEKLY_DAYS = ['mon', 'wed', 'thu', 'sat']
 
 /** 26-char lowercase id matching the app's ULID shape (src/lib/id.ts). */
 function newId() {
@@ -54,11 +59,11 @@ function ensureDevUser(app, env) {
   }
 }
 
-/** Create the /events/test event unless one already exists. Returns true when
- * a new event was created. */
-function seedTestEvent(app, env) {
+/** Create an event at `slug` unless one already exists. Returns true when a
+ * new event was created. */
+function seedEvent(app, env, slug, fields) {
   try {
-    app.findFirstRecordByFilter('events', 'slug = {:slug}', { slug: SLUG })
+    app.findFirstRecordByFilter('events', 'slug = {:slug}', { slug: slug })
     return false // already seeded
   } catch (err) {
     // not found — create below
@@ -68,13 +73,16 @@ function seedTestEvent(app, env) {
   var events = app.findCollectionByNameOrId('events')
   var record = new Record(events)
   record.set('id', newId())
-  record.set('title', 'Test Event')
-  record.set('slug', SLUG)
+  record.set('title', fields.title)
+  record.set('slug', slug)
   record.set(
     'description',
-    'Local seed data — this event is recreated on startup whenever /events/test does not exist.',
+    'Local seed data — this event is recreated on startup whenever /events/' +
+      slug +
+      ' does not exist.',
   )
-  record.set('dates', seedDates(new Date()))
+  record.set('kind', fields.kind)
+  record.set('dates', fields.dates)
   record.set('creator', user.id)
   record.set('creatorName', user.getString('name'))
   record.set('creatorEmail', user.getString('email'))
@@ -82,4 +90,36 @@ function seedTestEvent(app, env) {
   return true
 }
 
-module.exports = { SLUG, newId, isoInDays, seedDates, seedTestEvent }
+/** Ensure every seed event exists. Returns the slugs newly created. */
+function seedTestEvents(app, env) {
+  var created = []
+  if (
+    seedEvent(app, env, SLUG, {
+      title: 'Test Event',
+      kind: 'dates',
+      dates: seedDates(new Date()),
+    })
+  ) {
+    created.push(SLUG)
+  }
+  if (
+    seedEvent(app, env, WEEKLY_SLUG, {
+      title: 'Test Weekly Event',
+      kind: 'weekdays',
+      dates: WEEKLY_DAYS,
+    })
+  ) {
+    created.push(WEEKLY_SLUG)
+  }
+  return created
+}
+
+module.exports = {
+  SLUG,
+  WEEKLY_SLUG,
+  WEEKLY_DAYS,
+  newId,
+  isoInDays,
+  seedDates,
+  seedTestEvents,
+}

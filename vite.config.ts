@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 
-/** Ask the local PocketBase to ensure the /events/test seed exists (the
+/** Ask the local PocketBase to ensure the /events/test{,-weekly} seeds exist (the
  * /api/dev-seed route only exists on DEV_AUTH=true instances, so this is a
  * no-op 404 against anything else). */
 function devSeed(pocketbaseUrl: string | undefined): Plugin {
@@ -23,9 +23,9 @@ function devSeed(pocketbaseUrl: string | undefined): Plugin {
         fetch(`${pocketbaseUrl}/api/dev-seed`, { method: 'POST' })
           .then(async (res) => {
             if (!res.ok) return // not a DEV_AUTH instance — nothing to seed
-            const { created } = (await res.json()) as { created: boolean }
-            if (created) {
-              server.config.logger.info('[dev-seed] created /events/test')
+            const { created } = (await res.json()) as { created: string[] }
+            for (const slug of created) {
+              server.config.logger.info(`[dev-seed] created /events/${slug}`)
             }
           })
           .catch(() => {

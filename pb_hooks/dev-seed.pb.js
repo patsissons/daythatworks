@@ -1,7 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Local-only seed data: ensure a demo event always exists at /events/test
-// (recreated on startup if deleted). Gated on DEV_AUTH=true — set it on a
+// Local-only seed data: ensure demo events always exist at /events/test and
+// /events/test-weekly (recreated on startup if deleted). Gated on DEV_AUTH=true — set it on a
 // LOCAL `pocketbase serve` only, never in PocketHost secrets.
 //
 // On a brand-new pb_data the events collection doesn't exist yet during
@@ -12,9 +12,9 @@ onBootstrap((e) => {
   if ($os.getenv('DEV_AUTH') !== 'true') return
   try {
     const seed = require(`${__hooks}/lib/dev-seed.js`)
-    if (seed.seedTestEvent(e.app, (name) => $os.getenv(name))) {
-      console.log('[dev-seed] created /events/test')
-    }
+    seed.seedTestEvents(e.app, (name) => $os.getenv(name)).forEach((slug) => {
+      console.log('[dev-seed] created /events/' + slug)
+    })
   } catch (err) {
     console.warn('[dev-seed] deferred to cron (fresh database?): ' + err)
   }
@@ -25,19 +25,21 @@ if ($os.getenv('DEV_AUTH') === 'true') {
   // so `pnpm dev` guarantees the seed without waiting for the cron.
   routerAdd('POST', '/api/dev-seed', (e) => {
     const seed = require(`${__hooks}/lib/dev-seed.js`)
-    const created = seed.seedTestEvent(e.app, (name) => $os.getenv(name))
-    if (created) console.log('[dev-seed] created /events/test')
+    const created = seed.seedTestEvents(e.app, (name) => $os.getenv(name))
+    created.forEach((slug) => {
+      console.log('[dev-seed] created /events/' + slug)
+    })
     return e.json(200, { created })
   })
 
   cronAdd('devSeedTestEvent', '* * * * *', () => {
     try {
       const seed = require(`${__hooks}/lib/dev-seed.js`)
-      if (seed.seedTestEvent($app, (name) => $os.getenv(name))) {
-        console.log('[dev-seed] created /events/test')
-      }
+      seed.seedTestEvents($app, (name) => $os.getenv(name)).forEach((slug) => {
+        console.log('[dev-seed] created /events/' + slug)
+      })
     } catch (err) {
-      console.error('[dev-seed] failed to seed the test event', err)
+      console.error('[dev-seed] failed to seed the test events', err)
     }
   })
 }
