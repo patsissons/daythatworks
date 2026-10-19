@@ -2,6 +2,9 @@
 // Regenerate from the live schema with the `typegen` script after changing
 // pb_migrations/ (see README.md).
 
+/** '' predates the kind field and means 'dates'. */
+export type EventKind = '' | 'dates' | 'weekdays'
+
 export interface EventsRecord {
   id: string
   title: string
@@ -9,6 +12,8 @@ export interface EventsRecord {
   description: string
   image: string
   imageUrl: string
+  kind: EventKind
+  /** ISO dates, or 'sun'…'sat' tokens on weekday events. */
   dates: string[]
   hideNames: boolean
   creator: string

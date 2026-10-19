@@ -12,6 +12,7 @@ const EVENT: EventsRecord = {
   description: 'Bring snacks',
   image: '',
   imageUrl: '',
+  kind: 'dates',
   dates: ['2026-08-01', '2026-08-02', '2026-08-03'],
   hideNames: false,
   creator: 'user-creator',

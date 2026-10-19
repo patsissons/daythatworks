@@ -24,6 +24,7 @@ const INITIAL: EventsRecord = {
   description: '',
   image: '',
   imageUrl: '',
+  kind: 'dates',
   dates: ['2026-08-01', '2026-08-02'],
   hideNames: false,
   creator: 'me',
