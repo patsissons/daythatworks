@@ -42,6 +42,12 @@ export const FAQ_ITEMS: FaqItem[] = [
       'Each response marks the days that work. The app counts how many people can make each candidate day, and the day with the most people available (or days, when tied) is recommended as the best day.',
   },
   {
+    id: 'weekdays',
+    question: 'Can I find a regular day of the week instead?',
+    answer:
+      'Yes. When creating an event, switch to "Days of the week" and pick the weekdays that could work — handy for a weekly game night or a standing practice. Everyone taps the days that usually work for them, and the weekday that fits the most people is recommended. Since there is no specific date, weekday events skip the add-to-calendar buttons.',
+  },
+  {
     id: 'edit-response',
     question: 'Can I change or delete my response?',
     answer:

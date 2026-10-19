@@ -36,6 +36,11 @@ var FAQ_ITEMS = [
       'Each response marks the days that work. The app counts how many people can make each candidate day, and the day with the most people available (or days, when tied) is recommended as the best day.',
   },
   {
+    question: 'Can I find a regular day of the week instead?',
+    answer:
+      'Yes. When creating an event, switch to "Days of the week" and pick the weekdays that could work — handy for a weekly game night or a standing practice. Everyone taps the days that usually work for them, and the weekday that fits the most people is recommended. Since there is no specific date, weekday events skip the add-to-calendar buttons.',
+  },
+  {
     question: 'Can I change or delete my response?',
     answer:
       'Yes. Your response is tied to your browser identity (or your account, if you signed in), so revisiting the event lets you update it. Every response also gets a personal permalink you can save to jump back to it from any device.',

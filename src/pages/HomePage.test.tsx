@@ -62,6 +62,14 @@ describe('HomePage', () => {
           dates: ['2026-08-01', '2026-08-02'],
           creator: 'me',
         },
+        {
+          id: 'e3',
+          title: 'Game night',
+          slug: 'game-night',
+          kind: 'weekdays',
+          dates: ['mon', 'wed', 'fri'],
+          creator: 'me',
+        },
       ])
       .mockResolvedValueOnce([
         {
@@ -82,6 +90,12 @@ describe('HomePage', () => {
     expect(await screen.findByText('Summer BBQ')).toBeInTheDocument()
     expect(screen.getByText('Board games night')).toBeInTheDocument()
     expect(screen.getByText('1 of 2 days work for you')).toBeInTheDocument()
+    expect(
+      screen.getByText('2 candidate days · Sat, Aug 1 – Sun, Aug 2'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('3 days of the week · Mon, Wed, Fri'),
+    ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Summer BBQ/ })).toHaveAttribute(
       'href',
       '/events/summer-bbq',

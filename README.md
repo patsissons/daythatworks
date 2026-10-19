@@ -17,7 +17,14 @@ pasted — links are verified in the browser before saving). Guest event creatio
 users are unlimited. Viewing needs no account. An event can hide responder
 names from the group, and emails are never exposed through the public API.
 
-Every availability row offers write-only **add to calendar** actions (Google
+Events can also poll **days of the week** instead of specific dates — handy
+for finding a regular slot like a weekly game night. The event form toggles
+between "Specific dates" and "Days of the week"; responders tap the weekdays
+that usually work and results roll up the same way (a single-week heatmap
+strip, or the list view). Weekday events skip add-to-calendar since there's no
+specific date to add.
+
+Every date availability row offers write-only **add to calendar** actions (Google
 Calendar and Outlook.com compose links, plus an `.ics` download for Apple
 Calendar and desktop clients) — the app never reads anyone's calendar: there
 are no calendar OAuth scopes and no calendar API calls, by design. A `/faq`
