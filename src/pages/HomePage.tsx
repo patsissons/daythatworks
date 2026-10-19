@@ -15,12 +15,13 @@ import { formatDisplayDate } from '@/lib/dates'
 import { logger } from '@/lib/logger'
 import { pb } from '@/lib/pocketbase'
 import type { EventsRecord, SubmissionsRecord } from '@/lib/pocketbase-types'
+import { formatWeekdayList, isWeekdayEvent } from '@/lib/weekdays'
 
 const HOW_IT_WORKS = [
   {
     icon: CalendarPlus,
     title: 'Propose some days',
-    text: 'Create an event and pick every date that could work.',
+    text: 'Create an event and pick every date — or day of the week — that could work.',
   },
   {
     icon: Link2,
@@ -55,7 +56,8 @@ export function HomePage() {
         </h1>
         <p className="text-muted-foreground text-lg">
           Propose dates, share a link, and see which day fits your whole group —
-          no account required, no back-and-forth to decide.
+          or find the day of the week that works for a regular meetup. No
+          account required, no back-and-forth to decide.
         </p>
         <Button asChild size="lg">
           <Link to="/events/new">
@@ -167,9 +169,18 @@ function YourStuff({ userId }: { userId: string }) {
                 <CardHeader>
                   <CardTitle className="text-base">{event.title}</CardTitle>
                   <CardDescription>
-                    {event.dates.length} candidate days ·{' '}
-                    {formatDisplayDate(event.dates[0])} –{' '}
-                    {formatDisplayDate(event.dates[event.dates.length - 1])}
+                    {isWeekdayEvent(event) ? (
+                      <>
+                        {event.dates.length} days of the week ·{' '}
+                        {formatWeekdayList(event.dates)}
+                      </>
+                    ) : (
+                      <>
+                        {event.dates.length} candidate days ·{' '}
+                        {formatDisplayDate(event.dates[0])} –{' '}
+                        {formatDisplayDate(event.dates[event.dates.length - 1])}
+                      </>
+                    )}
                   </CardDescription>
                 </CardHeader>
               </Card>
