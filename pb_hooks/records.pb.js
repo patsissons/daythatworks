@@ -2,6 +2,7 @@
 
 // Server-side guarantees for events and submissions:
 // - dates payloads are validated/normalized (API rules can't inspect json)
+//   per the event's kind: ISO dates, or weekday tokens on 'weekdays' events
 // - creator*/submitter* identity fields are stamped from the authenticated
 //   user so clients can't spoof them
 // - private fields (emails, and names on hideNames events) are stripped from
@@ -10,9 +11,14 @@
 onRecordCreateRequest((e) => {
   const lib = require(`${__hooks}/lib/records.js`)
   const rl = require(`${__hooks}/lib/rate-limit.js`)
-  const dates = lib.normalizeDates(lib.readDates(e.record))
+  const kind = e.record.getString('kind')
+  const dates = lib.normalizeOptions(kind, lib.readDates(e.record))
   if (dates.length < 2) {
-    throw new BadRequestError('Pick at least 2 candidate dates.')
+    throw new BadRequestError(
+      lib.isWeekdayKind(kind)
+        ? 'Pick at least 2 days of the week.'
+        : 'Pick at least 2 candidate dates.',
+    )
   }
   if (lib.isReservedSlug(e.record.getString('slug'))) {
     throw new BadRequestError('That link is reserved — pick another.')
@@ -73,9 +79,16 @@ onRecordCreateRequest((e) => {
 
 onRecordUpdateRequest((e) => {
   const lib = require(`${__hooks}/lib/records.js`)
-  const dates = lib.normalizeDates(lib.readDates(e.record))
+  // the kind is immutable: existing responses are tied to its option format
+  const kind = e.record.original().getString('kind')
+  e.record.set('kind', kind)
+  const dates = lib.normalizeOptions(kind, lib.readDates(e.record))
   if (dates.length < 2) {
-    throw new BadRequestError('Pick at least 2 candidate dates.')
+    throw new BadRequestError(
+      lib.isWeekdayKind(kind)
+        ? 'Pick at least 2 days of the week.'
+        : 'Pick at least 2 candidate dates.',
+    )
   }
   if (lib.isReservedSlug(e.record.getString('slug'))) {
     throw new BadRequestError('That link is reserved — pick another.')
@@ -94,7 +107,10 @@ onRecordCreateRequest((e) => {
   const lib = require(`${__hooks}/lib/records.js`)
   const event = e.app.findRecordById('events', e.record.getString('event'))
   const offered = lib.readDates(event)
-  const dates = lib.normalizeDates(lib.readDates(e.record))
+  const dates = lib.normalizeOptions(
+    event.getString('kind'),
+    lib.readDates(e.record),
+  )
   for (let i = 0; i < dates.length; i++) {
     if (offered.indexOf(dates[i]) === -1) {
       throw new BadRequestError("'" + dates[i] + "' is not offered by this event")
@@ -117,7 +133,10 @@ onRecordUpdateRequest((e) => {
   e.record.set('event', e.record.original().getString('event'))
   const event = e.app.findRecordById('events', e.record.getString('event'))
   const offered = lib.readDates(event)
-  const dates = lib.normalizeDates(lib.readDates(e.record))
+  const dates = lib.normalizeOptions(
+    event.getString('kind'),
+    lib.readDates(e.record),
+  )
   for (let i = 0; i < dates.length; i++) {
     if (offered.indexOf(dates[i]) === -1) {
       throw new BadRequestError("'" + dates[i] + "' is not offered by this event")
