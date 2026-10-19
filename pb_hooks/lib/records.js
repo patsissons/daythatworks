@@ -47,6 +47,33 @@ function normalizeDates(dates) {
   return out.sort()
 }
 
+// Weekday-event option tokens, in canonical (Sunday-first) order. Mirrored in
+// src/lib/weekdays.ts — src/lib/weekdays.test.ts keeps them in sync.
+const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+
+/** Validate weekday tokens, dedupe, and return them in Sunday-first order. */
+function normalizeWeekdays(values) {
+  const seen = {}
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i]
+    if (typeof value !== 'string' || WEEKDAYS.indexOf(value) === -1) {
+      throw new BadRequestError('days of the week must be one of ' + WEEKDAYS.join(', '))
+    }
+    seen[value] = true
+  }
+  return WEEKDAYS.filter((day) => seen[day])
+}
+
+/** True for events polling days of the week (empty kind means dates). */
+function isWeekdayKind(kind) {
+  return kind === 'weekdays'
+}
+
+/** Normalize an event's or submission's options per the event's kind. */
+function normalizeOptions(kind, values) {
+  return isWeekdayKind(kind) ? normalizeWeekdays(values) : normalizeDates(values)
+}
+
 /** True when the request is authenticated as a regular app user. */
 function isUserAuth(auth) {
   return !!auth && auth.collection().name === 'users'
@@ -63,6 +90,10 @@ function isReservedSlug(value) {
 module.exports = {
   readDates,
   normalizeDates,
+  WEEKDAYS,
+  normalizeWeekdays,
+  isWeekdayKind,
+  normalizeOptions,
   isUserAuth,
   RESERVED_SLUGS,
   isReservedSlug,
