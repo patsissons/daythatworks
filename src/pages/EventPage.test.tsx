@@ -258,4 +258,34 @@ describe('EventPage', () => {
     ).not.toBeInTheDocument()
     expect(screen.getByText('2/2')).toBeInTheDocument()
   })
+
+  it('polls days of the week on weekday events', async () => {
+    mockUser = { id: 'user-new' } as AuthRecord
+    create.mockResolvedValue({})
+    getFirstListItem.mockResolvedValue({
+      ...EVENT,
+      kind: 'weekdays',
+      dates: ['mon', 'wed', 'fri'],
+    })
+    getFullList.mockResolvedValue([
+      { ...SUBMISSIONS[0], dates: ['wed'] },
+      { ...SUBMISSIONS[1], dates: ['mon', 'wed'] },
+    ])
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    expect(screen.getByText(/3 days of the week/)).toBeInTheDocument()
+    expect(
+      screen.getByText('Wednesday works best — 2 of 2 people can make it.'),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Friday' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Monday' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    const payload = create.mock.calls[0][0] as Record<string, string>
+    expect(JSON.parse(payload.dates)).toEqual(['mon', 'fri'])
+    fireEvent.click(screen.getByRole('button', { name: 'List' }))
+    expect(
+      screen.queryByRole('button', { name: /Add .* to calendar/ }),
+    ).not.toBeInTheDocument()
+  })
 })

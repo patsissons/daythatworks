@@ -165,6 +165,37 @@ describe('AvailabilityResults', () => {
     ).toHaveLength(DATES.length)
   })
 
+  it('labels weekday rows and omits add-to-calendar for weekday events', () => {
+    const weekdaySubmissions = [
+      { id: 's1', submitterName: 'Ada Lovelace', dates: ['tue', 'thu'] },
+      { id: 's2', submitterName: 'Grace Hopper', dates: ['thu'] },
+    ]
+    const result = aggregateAvailability(['tue', 'thu'], weekdaySubmissions)
+    render(
+      <>
+        <AvailabilityRecommendation result={result} kind="weekdays" />
+        <AvailabilityResults
+          result={result}
+          submissions={weekdaySubmissions}
+          kind="weekdays"
+          event={{
+            id: 'evt1',
+            title: 'Game night',
+            description: '',
+            slug: 'game-night',
+          }}
+        />
+      </>,
+    )
+    expect(
+      screen.getByText('Thursday works best — 2 of 2 people can make it.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Tuesday')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Add .* to calendar/ }),
+    ).not.toBeInTheDocument()
+  })
+
   it('omits add-to-calendar without an event', () => {
     renderResults()
     expect(

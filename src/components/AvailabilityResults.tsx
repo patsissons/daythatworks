@@ -2,24 +2,29 @@ import { Trophy } from 'lucide-react'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { AvatarPopoverGroup, InitialsAvatar } from '@/components/InitialsAvatar'
 import type { AvailabilityResult, SubmissionSummary } from '@/lib/availability'
-import { formatDisplayDate } from '@/lib/dates'
 import { cn } from '@/lib/utils'
-import type { EventsRecord } from '@/lib/pocketbase-types'
+import type { EventKind, EventsRecord } from '@/lib/pocketbase-types'
+import { formatOption } from '@/lib/weekdays'
 
 interface AvailabilityResultsProps {
   result: AvailabilityResult
   submissions: SubmissionSummary[]
   /** Highlight the rows this submission is available for (permalinked member). */
   focusedSubmissionId?: string
-  /** When provided, each row offers write-only add-to-calendar links. */
+  /** When provided, each date row offers write-only add-to-calendar links
+   * (weekday events don't). */
   event?: Pick<EventsRecord, 'id' | 'title' | 'description' | 'slug'>
+  /** Whether rows are dates or weekdays; defaults to dates. */
+  kind?: EventKind
 }
 
 /** The "X works best" banner, shared by the list and calendar views. */
 export function AvailabilityRecommendation({
   result,
+  kind = 'dates',
 }: {
   result: AvailabilityResult
+  kind?: EventKind
 }) {
   return (
     <p
@@ -30,12 +35,12 @@ export function AvailabilityRecommendation({
           : 'text-muted-foreground',
       )}
     >
-      {recommendation(result)}
+      {recommendation(result, kind)}
     </p>
   )
 }
 
-function recommendation(result: AvailabilityResult): string {
+function recommendation(result: AvailabilityResult, kind: EventKind): string {
   const { totalSubmissions, bestDates, bestCount } = result
   if (totalSubmissions === 0) {
     return 'No responses yet — share the link with your group to get started.'
@@ -45,7 +50,7 @@ function recommendation(result: AvailabilityResult): string {
     return 'No day works for anyone yet.'
   }
   if (bestDates.length === 1) {
-    return `${formatDisplayDate(bestDates[0])} works best — ${people} can make it.`
+    return `${formatOption(kind, bestDates[0])} works best — ${people} can make it.`
   }
   return `${bestDates.length} days tie for best — ${people} can make each.`
 }
@@ -55,6 +60,7 @@ export function AvailabilityResults({
   submissions,
   focusedSubmissionId,
   event,
+  kind = 'dates',
 }: AvailabilityResultsProps) {
   const byId = new Map(
     submissions.map((submission) => [submission.id, submission]),
@@ -85,7 +91,7 @@ export function AvailabilityResults({
               >
                 <div className="flex items-center gap-3">
                   <span className="w-28 shrink-0 text-sm font-medium">
-                    {formatDisplayDate(date)}
+                    {formatOption(kind, date)}
                   </span>
                   <div
                     aria-hidden
@@ -105,7 +111,9 @@ export function AvailabilityResults({
                       Best day
                     </span>
                   )}
-                  {event && <AddToCalendarButton event={event} date={date} />}
+                  {event && kind !== 'weekdays' && (
+                    <AddToCalendarButton event={event} date={date} />
+                  )}
                 </div>
                 {anyNames && count > 0 && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-31">

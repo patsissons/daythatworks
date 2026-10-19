@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react'
 import { AvatarFace } from '@/components/InitialsAvatar'
 import type { AvailabilityResult, SubmissionSummary } from '@/lib/availability'
-import { formatDisplayDate, monthGrid, monthLabel } from '@/lib/dates'
+import { monthGrid, monthLabel } from '@/lib/dates'
+import type { EventKind } from '@/lib/pocketbase-types'
 import { cn } from '@/lib/utils'
+import { WEEKDAYS, WEEKDAY_LABELS, formatOption } from '@/lib/weekdays'
 
-const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+const WEEKDAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
 interface AvailabilityHeatmapProps {
   result: AvailabilityResult
   submissions: SubmissionSummary[]
   /** Persistently outline this submission's days (permalinked member). */
   focusedSubmissionId?: string
+  /** Dates render as month grids, weekdays as a single week strip. */
+  kind?: EventKind
 }
 
 type Hover =
@@ -40,6 +44,7 @@ export function AvailabilityHeatmap({
   result,
   submissions,
   focusedSubmissionId,
+  kind = 'dates',
 }: AvailabilityHeatmapProps) {
   const [hover, setHover] = useState<Hover>(null)
 
@@ -82,91 +87,109 @@ export function AvailabilityHeatmap({
       .filter(Boolean)
   }
 
+  /** One heatmap cell: a candidate option (date or weekday), or a faint
+   * non-candidate placeholder shown for orientation. */
+  function renderCell(option: string, text: string, widthClass = 'w-8') {
+    const entry = byDate.get(option)
+    if (!entry) {
+      return (
+        <span
+          key={option}
+          aria-hidden
+          className={cn(
+            'text-muted-foreground/40 grid h-8 place-items-center text-sm',
+            widthClass,
+          )}
+        >
+          {text}
+        </span>
+      )
+    }
+    const label = formatOption(kind, option)
+    const fraction = total === 0 ? 0 : entry.count / total
+    const isBest = result.bestDates.includes(option)
+    const isOutlined =
+      !!outlinedSubmission && outlinedSubmission.dates.includes(option)
+    const isActive = hover?.kind === 'date' && hover.date === option
+    const names = namesFor(entry.submissionIds)
+    return (
+      <span key={option} className="relative">
+        <button
+          type="button"
+          aria-label={`${label} — ${entry.count} of ${total} available${isBest ? ' (best day)' : ''}`}
+          onMouseEnter={() => setHover({ kind: 'date', date: option })}
+          onMouseLeave={() => setHover(null)}
+          onFocus={() => setHover({ kind: 'date', date: option })}
+          onBlur={() => setHover(null)}
+          className={cn(
+            'grid h-8 cursor-default place-items-center rounded-md text-sm transition-shadow',
+            widthClass,
+            heatClasses(fraction),
+            isBest && 'ring-2 ring-amber-400',
+            isOutlined && 'outline-foreground outline-2 outline-dashed',
+            isActive && 'ring-ring ring-2',
+          )}
+        >
+          {text}
+        </button>
+        {isActive && (
+          <div
+            role="tooltip"
+            className="bg-popover text-popover-foreground absolute bottom-full left-1/2 z-10 mb-1.5 w-max max-w-52 -translate-x-1/2 rounded-md border px-2.5 py-1.5 text-xs shadow-md"
+          >
+            <p className="font-medium">
+              {label} · {entry.count}/{total}
+            </p>
+            {names.length > 0 && (
+              <p className="text-muted-foreground">
+                {names.slice(0, 5).join(', ')}
+                {names.length > 5 && ` +${names.length - 5} more`}
+              </p>
+            )}
+          </div>
+        )}
+      </span>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
       <div className="min-w-0 space-y-3">
-        <div className="flex flex-wrap gap-4">
-          {months.map(({ year, month }) => (
-            <div key={`${year}-${month}`} className="rounded-lg border p-3">
-              <p className="pb-2 text-center text-sm font-medium">
-                {monthLabel(year, month)}
-              </p>
-              <div className="grid grid-cols-7 gap-1">
-                {WEEKDAYS.map((weekday) => (
-                  <span
-                    key={weekday}
-                    className="text-muted-foreground grid h-8 w-8 place-items-center text-xs font-medium"
-                  >
-                    {weekday}
-                  </span>
-                ))}
-                {monthGrid(year, month).map((date, index) => {
-                  if (date === null) {
-                    return <span key={`pad-${index}`} className="h-8 w-8" />
-                  }
-                  const entry = byDate.get(date)
-                  if (!entry) {
-                    // not a candidate day — shown faintly for orientation
-                    return (
-                      <span
-                        key={date}
-                        aria-hidden
-                        className="text-muted-foreground/40 grid h-8 w-8 place-items-center text-sm"
-                      >
-                        {Number(date.slice(8, 10))}
-                      </span>
-                    )
-                  }
-                  const fraction = total === 0 ? 0 : entry.count / total
-                  const isBest = result.bestDates.includes(date)
-                  const isOutlined =
-                    !!outlinedSubmission &&
-                    outlinedSubmission.dates.includes(date)
-                  const isActive = hover?.kind === 'date' && hover.date === date
-                  const names = namesFor(entry.submissionIds)
-                  return (
-                    <span key={date} className="relative">
-                      <button
-                        type="button"
-                        aria-label={`${formatDisplayDate(date)} — ${entry.count} of ${total} available${isBest ? ' (best day)' : ''}`}
-                        onMouseEnter={() => setHover({ kind: 'date', date })}
-                        onMouseLeave={() => setHover(null)}
-                        onFocus={() => setHover({ kind: 'date', date })}
-                        onBlur={() => setHover(null)}
-                        className={cn(
-                          'grid h-8 w-8 cursor-default place-items-center rounded-md text-sm transition-shadow',
-                          heatClasses(fraction),
-                          isBest && 'ring-2 ring-amber-400',
-                          isOutlined &&
-                            'outline-foreground outline-2 outline-dashed',
-                          isActive && 'ring-ring ring-2',
-                        )}
-                      >
-                        {Number(date.slice(8, 10))}
-                      </button>
-                      {isActive && (
-                        <div
-                          role="tooltip"
-                          className="bg-popover text-popover-foreground absolute bottom-full left-1/2 z-10 mb-1.5 w-max max-w-52 -translate-x-1/2 rounded-md border px-2.5 py-1.5 text-xs shadow-md"
-                        >
-                          <p className="font-medium">
-                            {formatDisplayDate(date)} · {entry.count}/{total}
-                          </p>
-                          {names.length > 0 && (
-                            <p className="text-muted-foreground">
-                              {names.slice(0, 5).join(', ')}
-                              {names.length > 5 && ` +${names.length - 5} more`}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </span>
-                  )
-                })}
-              </div>
+        {kind === 'weekdays' ? (
+          <div className="w-fit rounded-lg border p-3">
+            <div className="grid grid-cols-7 gap-1">
+              {WEEKDAYS.map((day) =>
+                renderCell(day, WEEKDAY_LABELS[day].short, 'w-10'),
+              )}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-4">
+            {months.map(({ year, month }) => (
+              <div key={`${year}-${month}`} className="rounded-lg border p-3">
+                <p className="pb-2 text-center text-sm font-medium">
+                  {monthLabel(year, month)}
+                </p>
+                <div className="grid grid-cols-7 gap-1">
+                  {WEEKDAY_HEADERS.map((weekday) => (
+                    <span
+                      key={weekday}
+                      className="text-muted-foreground grid h-8 w-8 place-items-center text-xs font-medium"
+                    >
+                      {weekday}
+                    </span>
+                  ))}
+                  {monthGrid(year, month).map((date, index) => {
+                    if (date === null) {
+                      return <span key={`pad-${index}`} className="h-8 w-8" />
+                    }
+                    return renderCell(date, String(Number(date.slice(8, 10))))
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs">
           <span className="flex items-center gap-1">
             Fewer

@@ -127,4 +127,29 @@ describe('AvailabilityHeatmap', () => {
     renderHeatmap([])
     expect(screen.getByText('No responses yet.')).toBeInTheDocument()
   })
+
+  it('renders weekday events as a single week strip', () => {
+    const submissions = [
+      { id: 's1', submitterName: 'Ada Lovelace', dates: ['mon', 'wed'] },
+      { id: 's2', submitterName: 'Grace Hopper', dates: ['wed'] },
+    ]
+    render(
+      <AvailabilityHeatmap
+        result={aggregateAvailability(['mon', 'wed', 'sat'], submissions)}
+        submissions={submissions}
+        kind="weekdays"
+      />,
+    )
+    expect(screen.queryByText(/2026/)).not.toBeInTheDocument()
+    expect(cell(/^Monday — 1 of 2 available$/)).toBeInTheDocument()
+    expect(
+      cell(/^Wednesday — 2 of 2 available \(best day\)$/),
+    ).toBeInTheDocument()
+    expect(cell(/^Saturday — 0 of 2 available$/)).toBeInTheDocument()
+    // non-candidate weekdays are shown faintly, not as interactive cells
+    expect(screen.getByText('Tue')).not.toHaveAttribute('type')
+    expect(screen.queryByRole('button', { name: /^Tuesday/ })).toBeNull()
+    fireEvent.mouseEnter(cell(/^Wednesday/))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Wednesday · 2/2')
+  })
 })
