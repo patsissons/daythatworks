@@ -286,7 +286,20 @@ function drawText(data, atlas, bin, text, x, y, color) {
 var MONTHS = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')
 var DAYS = 'Sun Mon Tue Wed Thu Fri Sat'.split(' ')
 
+// weekday-event tokens (pb_hooks/lib/records.js WEEKDAYS) → display names
+var WEEKDAY_NAMES = {
+  sun: 'Sunday',
+  mon: 'Monday',
+  tue: 'Tuesday',
+  wed: 'Wednesday',
+  thu: 'Thursday',
+  fri: 'Friday',
+  sat: 'Saturday',
+}
+
+/** "Sat, Aug 8" for ISO dates; "Saturday" for weekday tokens. */
 function formatDay(iso) {
+  if (WEEKDAY_NAMES[iso]) return WEEKDAY_NAMES[iso]
   var year = parseInt(iso.slice(0, 4), 10)
   var month = parseInt(iso.slice(5, 7), 10)
   var day = parseInt(iso.slice(8, 10), 10)
@@ -300,12 +313,14 @@ function formatDay(iso) {
  */
 function buildCardData(title, eventDates, submissionDates) {
   var total = submissionDates.length
-  var counts = eventDates.map(function (date) {
+  // eventDates arrive normalized (chronological, or Sunday-first weekdays),
+  // so ties and display order follow their position rather than the string
+  var counts = eventDates.map(function (date, order) {
     var count = 0
     for (var i = 0; i < submissionDates.length; i++) {
       if (submissionDates[i].indexOf(date) !== -1) count++
     }
-    return { date: date, count: count }
+    return { date: date, count: count, order: order }
   })
   var bestCount = 0
   for (var i = 0; i < counts.length; i++) {
@@ -315,11 +330,11 @@ function buildCardData(title, eventDates, submissionDates) {
     .slice()
     .sort(function (a, b) {
       if (b.count !== a.count) return b.count - a.count
-      return a.date < b.date ? -1 : 1
+      return a.order - b.order
     })
     .slice(0, 3)
     .sort(function (a, b) {
-      return a.date < b.date ? -1 : 1
+      return a.order - b.order
     })
     .map(function (entry) {
       return {

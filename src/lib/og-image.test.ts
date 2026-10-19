@@ -93,6 +93,10 @@ describe('formatDay', () => {
   it('formats ISO dates', () => {
     expect(og.formatDay('2026-08-08')).toBe('Sat, Aug 8')
   })
+
+  it('names weekday-event tokens', () => {
+    expect(og.formatDay('wed')).toBe('Wednesday')
+  })
 })
 
 describe('buildCardData', () => {
@@ -131,5 +135,20 @@ describe('buildCardData', () => {
     ])
     expect(card.rows.map((row) => row.count)).toEqual([0, 1, 2])
     expect(card.rows[2].label).toBe('Mon, Aug 10')
+  })
+
+  it('orders weekday events Sunday-first, not alphabetically', () => {
+    const card = og.buildCardData(
+      'Game night',
+      ['sun', 'mon', 'wed', 'sat'],
+      [['wed', 'sat'], ['sat'], ['sun', 'wed']],
+    )
+    expect(card.bestLabel).toBe('Wednesday')
+    expect(card.rows.map((row) => row.label)).toEqual([
+      'Sunday',
+      'Wednesday',
+      'Saturday',
+    ])
+    expect(card.moreDays).toBe(1)
   })
 })
