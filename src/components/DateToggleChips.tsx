@@ -3,11 +3,14 @@ import { formatDisplayDate } from '@/lib/dates'
 import { cn } from '@/lib/utils'
 
 interface DateToggleChipsProps {
-  /** The event's candidate dates, in display order. */
+  /** The event's candidate options (dates or weekday tokens), in display order. */
   dates: string[]
   selected: string[]
+  /** Receives the selection in `dates` order. */
   onChange: (dates: string[]) => void
   disabled?: boolean
+  /** Chip label for an option; defaults to "Sat, Jul 25" date formatting. */
+  formatLabel?: (value: string) => string
 }
 
 export function DateToggleChips({
@@ -15,13 +18,13 @@ export function DateToggleChips({
   selected,
   onChange,
   disabled,
+  formatLabel = formatDisplayDate,
 }: DateToggleChipsProps) {
   function toggle(date: string) {
-    onChange(
-      selected.includes(date)
-        ? selected.filter((value) => value !== date)
-        : [...selected, date].sort(),
-    )
+    const next = new Set(selected)
+    if (next.has(date)) next.delete(date)
+    else next.add(date)
+    onChange(dates.filter((value) => next.has(value)))
   }
 
   return (
@@ -44,7 +47,7 @@ export function DateToggleChips({
             )}
           >
             {isSelected && <Check className="size-3.5" aria-hidden />}
-            {formatDisplayDate(date)}
+            {formatLabel(date)}
           </button>
         )
       })}
