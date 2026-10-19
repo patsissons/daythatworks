@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { CalendarDays, Repeat } from 'lucide-react'
+import { DateToggleChips } from '@/components/DateToggleChips'
 import { MultiDatePicker } from '@/components/MultiDatePicker'
 import { ImageDropzone, type ImageUrlStatus } from '@/components/ImageDropzone'
 import { Button } from '@/components/ui/button'
@@ -10,13 +12,14 @@ import { isSlugTaken, pbErrorMessage } from '@/lib/events'
 import { pb } from '@/lib/pocketbase'
 import type { EventsRecord } from '@/lib/pocketbase-types'
 import { isReservedSlug, isValidSlug, suggestSlug } from '@/lib/slug'
+import { WEEKDAYS, WEEKDAY_LABELS, isWeekdayEvent } from '@/lib/weekdays'
 
 interface EventFormProps {
   /** When set, the form edits this event instead of creating a new one. */
   initial?: EventsRecord
   submitLabel: string
   onSubmit: (form: FormData) => Promise<void>
-  /** Dates that already have responses (warn before removing them). */
+  /** Options (dates or weekdays) that already have responses (warn before removing them). */
   respondedDates?: string[]
   /** Extra validation run before the built-in checks (e.g. guest name). */
   extraValidate?: () => string | null
@@ -54,7 +57,18 @@ export function EventForm({
   const [title, setTitle] = useState(initial?.title ?? '')
   const [slug, setSlug] = useState(initial?.slug ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
-  const [dates, setDates] = useState<string[]>(initial?.dates ?? [])
+  // the kind is fixed once created; only new events get the toggle
+  const [kind, setKind] = useState<'dates' | 'weekdays'>(
+    initial && isWeekdayEvent(initial) ? 'weekdays' : 'dates',
+  )
+  // separate selections so switching kinds doesn't lose picks
+  const [dates, setDates] = useState<string[]>(
+    initial && kind === 'dates' ? initial.dates : [],
+  )
+  const [weekdays, setWeekdays] = useState<string[]>(
+    initial && kind === 'weekdays' ? initial.dates : [],
+  )
+  const options = kind === 'weekdays' ? weekdays : dates
   const [hideNames, setHideNames] = useState(initial?.hideNames ?? false)
   const [image, setImageState] = useState<ImageSource>({ kind: 'unchanged' })
   const [imageUrlStatus, setImageUrlStatus] = useState<ImageUrlStatus>('idle')
@@ -88,7 +102,7 @@ export function EventForm({
 
   const slugPlaceholder = suggestSlug(title) || 'my-event'
   const removedResponded = respondedDates.filter(
-    (date) => !dates.includes(date),
+    (date) => !options.includes(date),
   )
 
   async function checkSlug() {
@@ -125,7 +139,11 @@ export function EventForm({
     const extraProblem = extraValidate?.()
     if (extraProblem) return extraProblem
     if (!title.trim()) return 'Give your event a title.'
-    if (dates.length < 2) return 'Pick at least 2 candidate dates.'
+    if (options.length < 2) {
+      return kind === 'weekdays'
+        ? 'Pick at least 2 days of the week.'
+        : 'Pick at least 2 candidate dates.'
+    }
     if (slug && !isValidSlug(slug)) return SLUG_FORMAT_MESSAGE
     if (slug && isReservedSlug(slug.trim())) return SLUG_RESERVED_MESSAGE
     if (slug && slugCheck.status === 'taken' && slugCheck.slug === slug) {
@@ -154,7 +172,8 @@ export function EventForm({
       form.set('title', title.trim())
       form.set('slug', slug)
       form.set('description', description)
-      form.set('dates', JSON.stringify(dates))
+      form.set('kind', kind)
+      form.set('dates', JSON.stringify(options))
       form.set('hideNames', String(hideNames))
       if (image.kind === 'file') {
         form.set('image', image.file)
@@ -274,19 +293,68 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Candidate dates</Label>
-        <p className="text-muted-foreground text-sm">
-          Pick at least 2 days your group could meet.
-        </p>
-        <MultiDatePicker
-          selected={dates}
-          onChange={setDates}
-          minDate={initial ? undefined : isoDate(new Date())}
-        />
+        <Label>
+          {kind === 'weekdays'
+            ? 'Candidate days of the week'
+            : 'Candidate dates'}
+        </Label>
+        {!initial && (
+          <div
+            role="group"
+            aria-label="Event type"
+            className="flex w-fit gap-0.5 rounded-lg border p-0.5"
+          >
+            <Button
+              type="button"
+              variant={kind === 'dates' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={kind === 'dates'}
+              onClick={() => setKind('dates')}
+            >
+              <CalendarDays />
+              Specific dates
+            </Button>
+            <Button
+              type="button"
+              variant={kind === 'weekdays' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={kind === 'weekdays'}
+              onClick={() => setKind('weekdays')}
+            >
+              <Repeat />
+              Days of the week
+            </Button>
+          </div>
+        )}
+        {kind === 'weekdays' ? (
+          <>
+            <p className="text-muted-foreground text-sm">
+              Pick at least 2 days your group could meet each week.
+            </p>
+            <DateToggleChips
+              dates={WEEKDAYS}
+              selected={weekdays}
+              onChange={setWeekdays}
+              formatLabel={(day) => WEEKDAY_LABELS[day].long}
+              disabled={busy}
+            />
+          </>
+        ) : (
+          <>
+            <p className="text-muted-foreground text-sm">
+              Pick at least 2 days your group could meet.
+            </p>
+            <MultiDatePicker
+              selected={dates}
+              onChange={setDates}
+              minDate={initial ? undefined : isoDate(new Date())}
+            />
+          </>
+        )}
         {removedResponded.length > 0 && (
           <p className="text-destructive text-sm">
             Heads up: removing{' '}
-            {removedResponded.length === 1 ? 'a date' : 'dates'} people already
+            {removedResponded.length === 1 ? 'a day' : 'days'} people already
             responded to will drop those answers from the results.
           </p>
         )}
