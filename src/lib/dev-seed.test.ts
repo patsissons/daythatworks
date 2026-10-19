@@ -3,21 +3,32 @@ import { describe, expect, it } from 'vitest'
 import { ISO_DATE_PATTERN } from '@/lib/dates'
 
 // Like og.test.ts: a PocketBase JSVM CommonJS module evaluated in an explicit
-// CJS wrapper. Only the pure helpers are exercised here — seedTestEvent needs
+// CJS wrapper. Only the pure helpers are exercised here — seedTestEvents needs
 // a live PocketBase app.
 const code = readFileSync('pb_hooks/lib/dev-seed.js', 'utf8')
 const moduleRef = { exports: {} }
 new Function('module', 'exports', code)(moduleRef, moduleRef.exports)
 const seed = moduleRef.exports as {
   SLUG: string
+  WEEKLY_SLUG: string
+  WEEKLY_DAYS: string[]
   newId: () => string
   isoInDays: (now: Date, days: number) => string
   seedDates: (now: Date) => string[]
 }
 
 describe('dev-seed helpers', () => {
-  it('reserves the /events/test slug', () => {
+  it('reserves the /events/test and /events/test-weekly slugs', () => {
     expect(seed.SLUG).toBe('test')
+    expect(seed.WEEKLY_SLUG).toBe('test-weekly')
+  })
+
+  it('seeds a valid, Sunday-first set of weekdays', () => {
+    const order = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+    expect(seed.WEEKLY_DAYS.length).toBeGreaterThanOrEqual(2)
+    const indexes = seed.WEEKLY_DAYS.map((day) => order.indexOf(day))
+    expect(indexes.every((index) => index >= 0)).toBe(true)
+    expect([...indexes].sort((a, b) => a - b)).toEqual(indexes)
   })
 
   it('generates 26-char lowercase ids like the app', () => {
