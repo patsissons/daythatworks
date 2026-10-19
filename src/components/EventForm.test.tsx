@@ -240,3 +240,86 @@ describe('EventForm image FormData', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 })
+
+describe('EventForm event type', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    onSubmit.mockResolvedValue(undefined)
+  })
+
+  function pickWeekdays(...names: string[]) {
+    fireEvent.click(screen.getByRole('button', { name: 'Days of the week' }))
+    for (const name of names) {
+      fireEvent.click(screen.getByRole('button', { name }))
+    }
+  }
+
+  it('defaults new events to specific dates', async () => {
+    renderForm()
+    await fillValidForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const form = onSubmit.mock.calls[0][0] as FormData
+    expect(form.get('kind')).toBe('dates')
+    expect(JSON.parse(form.get('dates') as string)).toHaveLength(2)
+  })
+
+  it('submits weekday events with Sunday-first tokens', async () => {
+    renderForm()
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Game night' },
+    })
+    pickWeekdays('Saturday', 'Monday', 'Wednesday')
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const form = onSubmit.mock.calls[0][0] as FormData
+    expect(form.get('kind')).toBe('weekdays')
+    expect(JSON.parse(form.get('dates') as string)).toEqual([
+      'mon',
+      'wed',
+      'sat',
+    ])
+  })
+
+  it('requires at least 2 days of the week', async () => {
+    renderForm()
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Game night' },
+    })
+    pickWeekdays('Friday')
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(
+      await screen.findByText('Pick at least 2 days of the week.'),
+    ).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('keeps each kind’s picks when switching back and forth', async () => {
+    renderForm()
+    await fillValidForm()
+    pickWeekdays('Tuesday')
+    fireEvent.click(screen.getByRole('button', { name: 'Specific dates' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const form = onSubmit.mock.calls[0][0] as FormData
+    expect(form.get('kind')).toBe('dates')
+    expect(JSON.parse(form.get('dates') as string)).toHaveLength(2)
+  })
+
+  it('locks the kind when editing a weekday event', async () => {
+    renderForm({ ...INITIAL, kind: 'weekdays', dates: ['tue', 'thu'] })
+    expect(
+      screen.queryByRole('group', { name: 'Event type' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Candidate days of the week')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tuesday' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const form = onSubmit.mock.calls[0][0] as FormData
+    expect(form.get('kind')).toBe('weekdays')
+    expect(JSON.parse(form.get('dates') as string)).toEqual(['tue', 'thu'])
+  })
+})

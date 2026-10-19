@@ -27,7 +27,8 @@ export function NewEventPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">New event</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Propose some dates, then share the link with your group.
+          Propose some dates (or days of the week), then share the link with
+          your group.
         </p>
       </div>
       <EventForm
