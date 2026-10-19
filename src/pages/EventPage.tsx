@@ -35,6 +35,7 @@ import { useLoginDialog } from '@/lib/login-dialog'
 import { pb } from '@/lib/pocketbase'
 import { usePageTitle } from '@/lib/title'
 import type { EventsRecord, SubmissionsRecord } from '@/lib/pocketbase-types'
+import { formatOption, isWeekdayEvent } from '@/lib/weekdays'
 
 type EventState =
   | { status: 'loading' }
@@ -155,7 +156,8 @@ function EventContent({
             <h1 className="text-3xl font-bold tracking-tight">{event.title}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
               Organized by {event.creatorName || 'someone'} ·{' '}
-              {event.dates.length} candidate days
+              {event.dates.length}{' '}
+              {isWeekdayEvent(event) ? 'days of the week' : 'candidate days'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -220,12 +222,13 @@ function EventContent({
             </Button>
           </div>
         </div>
-        <AvailabilityRecommendation result={result} />
+        <AvailabilityRecommendation result={result} kind={event.kind} />
         {resultsView === 'calendar' ? (
           <AvailabilityHeatmap
             result={result}
             submissions={summaries}
             focusedSubmissionId={submissionId}
+            kind={event.kind}
           />
         ) : (
           <AvailabilityResults
@@ -233,6 +236,7 @@ function EventContent({
             submissions={summaries}
             focusedSubmissionId={submissionId}
             event={event}
+            kind={event.kind}
           />
         )}
       </section>
@@ -308,8 +312,9 @@ function RespondSection({
       <CardHeader>
         <CardTitle className="text-base">Your availability</CardTitle>
         <CardDescription>
-          Tap every day that works for you — unselected days count as
-          unavailable.
+          {isWeekdayEvent(event)
+            ? 'Tap every day of the week that usually works for you — unselected days count as unavailable.'
+            : 'Tap every day that works for you — unselected days count as unavailable.'}
           {!user && ' No account needed — just your name.'}
         </CardDescription>
       </CardHeader>
@@ -340,6 +345,7 @@ function RespondSection({
             selected={selected}
             onChange={setSelected}
             disabled={busy}
+            formatLabel={(option) => formatOption(event.kind, option)}
           />
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={busy}>
