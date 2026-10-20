@@ -4,12 +4,14 @@
 // flagged guest=true (synthetic email, random password) and returns a normal
 // auth response. The SPA stores the token like any login, which is what lets
 // guests edit their responses later and keeps their name across events.
+// The name is optional: responders to hideNames events are never asked for
+// one, so those guests start nameless (and show as "Anonymous").
 // Guests cannot create events (see events createRule) — only respond.
 routerAdd('POST', '/api/guest-login', (e) => {
   const body = e.requestInfo().body
   const name = String((body && body.name) || '').trim()
-  if (name.length < 1 || name.length > 100) {
-    throw new BadRequestError('Enter your name (1-100 characters).')
+  if (name.length > 100) {
+    throw new BadRequestError('Names can be at most 100 characters.')
   }
 
   const users = e.app.findCollectionByNameOrId('users')
