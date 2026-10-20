@@ -55,7 +55,7 @@ describe('Layout', () => {
     expect(screen.queryByText('Guest')).toBeNull()
     expect(screen.queryByText(/@guest\.daythatworks\.com/)).toBeNull()
     expect(
-      screen.getByRole('button', { name: 'Forget me' }),
+      screen.getByRole('button', { name: 'Exit guest mode' }),
     ).toBeInTheDocument()
   })
 })

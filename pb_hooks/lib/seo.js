@@ -23,7 +23,7 @@ var FAQ_ITEMS = [
   {
     question: 'Do I need an account?',
     answer:
-      'No. Responding to an event only asks for your name (or nothing at all, on events that hide responder names). A lightweight guest identity is kept in your browser so you can edit your response later, and you can erase it any time with "Forget me".',
+      'No. Responding to an event only asks for your name (or nothing at all, on events that hide responder names). A lightweight guest identity is kept in your browser so you can edit your response later, and you can erase it any time with "Exit guest mode".',
   },
   {
     question: 'Can this app see my calendar?',

@@ -34,7 +34,7 @@ export function Layout() {
                   )}
                 </span>
                 <Button variant="outline" size="sm" onClick={onLogout}>
-                  {isGuest ? 'Forget me' : 'Log out'}
+                  {isGuest ? 'Exit guest mode' : 'Log out'}
                 </Button>
               </>
             ) : (
