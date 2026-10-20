@@ -20,8 +20,8 @@ names from the group (its responders aren't asked for a name at all), and emails
 Events can also poll **days of the week** instead of specific dates — handy
 for finding a regular slot like a weekly game night. The event form toggles
 between "Specific dates" and "Days of the week"; responders tap the weekdays
-that usually work and results roll up the same way (a single-week heatmap
-strip, or the list view). Weekday events skip add-to-calendar since there's no
+that usually work and results roll up in the list view (weekday events
+have no calendar view). Weekday events skip add-to-calendar since there's no
 specific date to add.
 
 Every date availability row offers write-only **add to calendar** actions (Google
