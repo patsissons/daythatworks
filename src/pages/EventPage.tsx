@@ -268,7 +268,8 @@ function RespondSection({
   const [busy, setBusy] = useState(false)
   const [savedId, setSavedId] = useState<string | null>(null)
 
-  const needsName = !user || isGuest
+  // anonymous (hideNames) events never ask for a name
+  const needsName = (!user || isGuest) && !event.hideNames
 
   async function save() {
     if (needsName && !name.trim()) {
@@ -315,7 +316,10 @@ function RespondSection({
           {isWeekdayEvent(event)
             ? 'Tap every day of the week that usually works for you — unselected days count as unavailable.'
             : 'Tap every day that works for you — unselected days count as unavailable.'}
-          {!user && ' No account needed — just your name.'}
+          {!user &&
+            (event.hideNames
+              ? ' No account needed — your response is anonymous.'
+              : ' No account needed — just your name.')}
         </CardDescription>
       </CardHeader>
       <CardContent>

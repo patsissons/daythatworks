@@ -25,7 +25,7 @@ export function Layout() {
             {user ? (
               <>
                 <span className="text-muted-foreground text-sm">
-                  {user.name || user.email}
+                  {user.name || (isGuest ? 'Guest' : user.email)}
                   {isGuest && (
                     <span className="bg-secondary text-secondary-foreground ml-1.5 rounded-full border px-2 py-0.5 text-xs">
                       guest
