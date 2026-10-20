@@ -40,9 +40,10 @@ describe('Layout', () => {
     } as unknown as AuthRecord
     renderLayout()
     expect(screen.getByText('Ada')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
   })
 
-  it('falls back to "Guest" for a nameless guest, never the synthetic email', () => {
+  it('shows only the guest badge for a nameless guest, never the synthetic email', () => {
     mockUser = {
       id: 'u2',
       name: '',
@@ -50,7 +51,11 @@ describe('Layout', () => {
       email: 'guest-abc@guest.daythatworks.com',
     } as unknown as AuthRecord
     renderLayout()
-    expect(screen.getByText('Guest')).toBeInTheDocument()
+    expect(screen.getByText('guest')).toBeInTheDocument()
+    expect(screen.queryByText('Guest')).toBeNull()
     expect(screen.queryByText(/@guest\.daythatworks\.com/)).toBeNull()
+    expect(
+      screen.getByRole('button', { name: 'Exit guest mode' }),
+    ).toBeInTheDocument()
   })
 })

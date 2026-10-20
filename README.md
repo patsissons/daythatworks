@@ -9,7 +9,7 @@ linking between days and responders) or a detailed list view. Events live at
 response has its own permalink at `/events/<slug-or-id>/s/<submission-id>`.
 No account is needed to create events or respond — just a name. Guests get
 a persistent identity kept in the browser so they can edit their events and
-responses (and can erase it any time via "Log out & forget me"); signing in
+responses (and can erase it any time via "Exit guest mode"); signing in
 (Google/GitHub OAuth) makes that history durable across browsers. Event
 images can be uploaded or linked from an external URL (dragged, dropped, or
 pasted — links are verified in the browser before saving). Guest event creation is rate limited (sliding 24h window:
@@ -20,8 +20,8 @@ names from the group (its responders aren't asked for a name at all), and emails
 Events can also poll **days of the week** instead of specific dates — handy
 for finding a regular slot like a weekly game night. The event form toggles
 between "Specific dates" and "Days of the week"; responders tap the weekdays
-that usually work and results roll up the same way (a single-week heatmap
-strip, or the list view). Weekday events skip add-to-calendar since there's no
+that usually work and results roll up in the list view (weekday events
+have no calendar view). Weekday events skip add-to-calendar since there's no
 specific date to add.
 
 Every date availability row offers write-only **add to calendar** actions (Google

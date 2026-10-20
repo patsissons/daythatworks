@@ -314,7 +314,31 @@ describe('EventPage', () => {
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     const payload = create.mock.calls[0][0] as Record<string, string>
     expect(JSON.parse(payload.dates)).toEqual(['mon', 'fri'])
-    fireEvent.click(screen.getByRole('button', { name: 'List' }))
+    expect(
+      screen.queryByRole('button', { name: /Add .* to calendar/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows weekday results as a list with no calendar toggle', async () => {
+    getFirstListItem.mockResolvedValue({
+      ...EVENT,
+      kind: 'weekdays',
+      dates: ['mon', 'wed', 'fri'],
+    })
+    getFullList.mockResolvedValue([
+      { ...SUBMISSIONS[0], dates: ['wed'] },
+      { ...SUBMISSIONS[1], dates: ['mon', 'wed'] },
+    ])
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    expect(
+      screen.queryByRole('group', { name: 'Results view' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Calendar' }),
+    ).not.toBeInTheDocument()
+    // list view counts render straight away
+    expect(screen.getByText('2/2')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /Add .* to calendar/ }),
     ).not.toBeInTheDocument()

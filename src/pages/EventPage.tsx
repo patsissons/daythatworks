@@ -140,6 +140,9 @@ function EventContent({
     dates: submission.dates ?? [],
   }))
   const result = aggregateAvailability(event.dates, summaries)
+  // weekday events have no dates to lay out on a calendar: list view only
+  const weekly = isWeekdayEvent(event)
+  const showCalendar = !weekly && resultsView === 'calendar'
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -195,35 +198,37 @@ function EventContent({
             <CalendarDays className="size-5" aria-hidden />
             Which day works?
           </h2>
-          <div
-            role="group"
-            aria-label="Results view"
-            className="flex gap-0.5 rounded-lg border p-0.5"
-          >
-            <Button
-              type="button"
-              variant={resultsView === 'calendar' ? 'secondary' : 'ghost'}
-              size="sm"
-              aria-pressed={resultsView === 'calendar'}
-              onClick={() => setResultsView('calendar')}
+          {!weekly && (
+            <div
+              role="group"
+              aria-label="Results view"
+              className="flex gap-0.5 rounded-lg border p-0.5"
             >
-              <CalendarDays />
-              Calendar
-            </Button>
-            <Button
-              type="button"
-              variant={resultsView === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              aria-pressed={resultsView === 'list'}
-              onClick={() => setResultsView('list')}
-            >
-              <List />
-              List
-            </Button>
-          </div>
+              <Button
+                type="button"
+                variant={resultsView === 'calendar' ? 'secondary' : 'ghost'}
+                size="sm"
+                aria-pressed={resultsView === 'calendar'}
+                onClick={() => setResultsView('calendar')}
+              >
+                <CalendarDays />
+                Calendar
+              </Button>
+              <Button
+                type="button"
+                variant={resultsView === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                aria-pressed={resultsView === 'list'}
+                onClick={() => setResultsView('list')}
+              >
+                <List />
+                List
+              </Button>
+            </div>
+          )}
         </div>
         <AvailabilityRecommendation result={result} kind={event.kind} />
-        {resultsView === 'calendar' ? (
+        {showCalendar ? (
           <AvailabilityHeatmap
             result={result}
             submissions={summaries}

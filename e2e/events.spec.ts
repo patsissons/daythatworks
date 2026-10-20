@@ -165,8 +165,8 @@ test('create a days-of-the-week event and respond to it', async ({ page }) => {
     page.getByText('Thursday works best — 1 of 1 person can make it.'),
   ).toBeVisible()
 
-  // weekday results have no specific date to add to a calendar
-  await page.getByRole('button', { name: 'List' }).click()
+  // weekday results are list-only, with no specific date to add to a calendar
+  await expect(page.getByRole('group', { name: 'Results view' })).toHaveCount(0)
   await expect(page.getByText('Best day')).toBeVisible()
   await expect(
     page.getByRole('button', { name: /Add .* to calendar/ }),
@@ -203,6 +203,9 @@ test('anonymous events never ask responders for a name', async ({ page }) => {
     page.getByRole('button', { name: 'Update availability' }),
   ).toBeVisible()
 
-  // the nameless guest shows as "Guest" in the header
-  await expect(page.locator('header').getByText(/^Guest/)).toBeVisible()
+  // the nameless guest shows only the guest badge in the header
+  await expect(
+    page.locator('header').getByText('guest', { exact: true }),
+  ).toBeVisible()
+  await expect(page.locator('header').getByText('Guest')).toHaveCount(0)
 })

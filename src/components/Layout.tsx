@@ -24,16 +24,17 @@ export function Layout() {
           <nav className="flex items-center gap-2">
             {user ? (
               <>
-                <span className="text-muted-foreground text-sm">
-                  {user.name || (isGuest ? 'Guest' : user.email)}
+                <span className="text-muted-foreground inline-flex items-center gap-1.5 text-sm">
+                  {/* a nameless guest shows just the badge, never the synthetic email */}
+                  {user.name || (!isGuest && user.email)}
                   {isGuest && (
-                    <span className="bg-secondary text-secondary-foreground ml-1.5 rounded-full border px-2 py-0.5 text-xs">
+                    <span className="bg-secondary text-secondary-foreground rounded-full border px-2 py-0.5 text-xs">
                       guest
                     </span>
                   )}
                 </span>
                 <Button variant="outline" size="sm" onClick={onLogout}>
-                  {isGuest ? 'Log out & forget me' : 'Log out'}
+                  {isGuest ? 'Exit guest mode' : 'Log out'}
                 </Button>
               </>
             ) : (
