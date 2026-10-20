@@ -178,6 +178,37 @@ describe('EventPage', () => {
     expect(JSON.parse(payload.dates)).toEqual(['2026-08-01'])
   })
 
+  it('skips the name field on anonymous events and saves a nameless guest', async () => {
+    getFirstListItem.mockResolvedValue({ ...EVENT, hideNames: true })
+    loginAsGuest.mockResolvedValue(undefined)
+    create.mockResolvedValue({})
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    expect(screen.queryByLabelText('Your name')).not.toBeInTheDocument()
+    expect(screen.getByText(/your response is anonymous/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(loginAsGuest).toHaveBeenCalledWith('')
+  })
+
+  it('leaves a guest name untouched when responding anonymously', async () => {
+    getFirstListItem.mockResolvedValue({ ...EVENT, hideNames: true })
+    mockUser = {
+      id: 'user-guest',
+      guest: true,
+      name: 'Gus',
+    } as unknown as AuthRecord
+    create.mockResolvedValue({})
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    expect(screen.queryByLabelText('Your name')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(update).not.toHaveBeenCalled()
+  })
+
   it('shows a not-found card for unknown events', async () => {
     getFirstListItem.mockRejectedValue({ status: 404 })
     renderPage('/events/nope')
