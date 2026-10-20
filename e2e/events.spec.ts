@@ -172,3 +172,37 @@ test('create a days-of-the-week event and respond to it', async ({ page }) => {
     page.getByRole('button', { name: /Add .* to calendar/ }),
   ).toHaveCount(0)
 })
+
+test('anonymous events never ask responders for a name', async ({ page }) => {
+  test.skip(!process.env.E2E_PB_URL, 'needs a local PocketBase (E2E_PB_URL)')
+
+  await devLogin(page)
+  await page.goto('/events/new')
+  const title = `E2E Anonymous ${Date.now()}`
+  await page.getByLabel('Title').fill(title)
+  await page.getByRole('button', { name: 'Next month' }).click()
+  const days = page.locator('button[aria-label^="20"]:not([disabled])')
+  await days.nth(0).click()
+  await days.nth(1).click()
+  await page.getByLabel(/Hide who.s available/).check()
+  await page.getByRole('button', { name: 'Create event' }).click()
+  await expect(page.getByRole('heading', { name: title })).toBeVisible()
+
+  // a different person with no account opens the link
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await expect(page.getByText(/your response is anonymous/)).toBeVisible()
+  await expect(page.getByLabel('Your name')).toHaveCount(0)
+  await page
+    .locator('button[aria-pressed]')
+    .filter({ hasText: /, / })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Save availability' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Update availability' }),
+  ).toBeVisible()
+
+  // the nameless guest shows as "Guest" in the header
+  await expect(page.locator('header').getByText(/^Guest/)).toBeVisible()
+})
