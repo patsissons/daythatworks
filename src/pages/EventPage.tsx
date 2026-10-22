@@ -234,6 +234,7 @@ function EventContent({
             submissions={summaries}
             focusedSubmissionId={submissionId}
             kind={event.kind}
+            hideNames={event.hideNames}
           />
         ) : (
           <AvailabilityResults
