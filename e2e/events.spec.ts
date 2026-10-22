@@ -126,14 +126,17 @@ test('respond as a guest without an account', async ({ page }) => {
   ).toBeVisible()
   await expect(page.getByText(/E2E Guest/)).toHaveCount(0)
 
-  // ...or clear their name entirely, leaving an anonymous response
+  // ...or clear the name on this response, leaving it anonymous; their
+  // default name (shown in the header) is untouched
   await page.getByLabel('Your name').fill('')
   await page.getByRole('button', { name: 'Update availability' }).click()
   await expect(page.getByText(/names hidden/)).toBeVisible()
-  await expect(page.getByText(/E2E Renamed/)).toHaveCount(0)
-  await expect(
-    page.locator('header').getByText('guest', { exact: true }),
-  ).toBeVisible()
+  await expect(page.locator('main').getByText(/E2E Renamed/)).toHaveCount(0)
+  await expect(page.locator('header').getByText(/E2E Renamed/)).toBeVisible()
+
+  // the anonymous choice sticks across reloads
+  await page.reload()
+  await expect(page.getByLabel('Your name')).toHaveValue('')
 })
 
 test('create an event as a guest without an account', async ({ page }) => {
@@ -160,6 +163,45 @@ test('create an event as a guest without an account', async ({ page }) => {
   await expect(
     page.getByRole('link', { name: new RegExp(title) }),
   ).toBeVisible()
+})
+
+test('a named guest organizer responds anonymously to a hidden-names event', async ({
+  page,
+}) => {
+  test.skip(!process.env.E2E_PB_URL, 'needs a local PocketBase (E2E_PB_URL)')
+
+  await page.goto('/events/new')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+
+  const title = `Guest Hidden E2E ${Date.now()}`
+  await page.getByLabel('Your name').fill('E2E Host')
+  await page.getByLabel('Title').fill(title)
+  await page.getByRole('button', { name: 'Next month' }).click()
+  const days = page.locator('button[aria-label^="20"]:not([disabled])')
+  await days.nth(0).click()
+  await days.nth(1).click()
+  await page.getByLabel(/Hide who.s available/).check()
+  await page.getByRole('button', { name: 'Create event' }).click()
+  await expect(page.getByRole('heading', { name: title })).toBeVisible()
+
+  // the named guest's response is anonymous, even to themselves as organizer
+  await expect(page.getByText(/Your response is anonymous/)).toBeVisible()
+  await expect(page.getByLabel('Your name')).toHaveCount(0)
+  await page
+    .locator('button[aria-pressed]')
+    .filter({ hasText: /, / })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Save availability' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Update availability' }),
+  ).toBeVisible()
+  await expect(page.getByText(/names hidden/)).toBeVisible()
+
+  // ...while the event still credits them as organizer
+  await expect(page.getByText(/Organized by E2E Host/)).toBeVisible()
+  await expect(page.getByRole('banner').getByText(/E2E Host/)).toBeVisible()
 })
 
 test('create a days-of-the-week event and respond to it', async ({ page }) => {

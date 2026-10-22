@@ -4,7 +4,9 @@
 // - dates payloads are validated/normalized (API rules can't inspect json)
 //   per the event's kind: ISO dates, or weekday tokens on 'weekdays' events
 // - creator*/submitter* identity fields are stamped from the authenticated
-//   user so clients can't spoof them
+//   user so clients can't spoof them; the one exception is guest names,
+//   which guests choose per event/response (see creatorNameFor and
+//   submitterNameFor in lib/records.js)
 // - private fields (emails, and names on hideNames events) are stripped from
 //   responses via onRecordEnrich
 
@@ -26,7 +28,7 @@ onRecordCreateRequest((e) => {
   e.record.set('dates', dates)
   if (lib.isUserAuth(e.auth)) {
     e.record.set('creator', e.auth.id)
-    e.record.set('creatorName', e.auth.getString('name'))
+    e.record.set('creatorName', lib.creatorNameFor(e.auth, e.record))
     e.record.set('creatorEmail', e.auth.email())
   }
 
@@ -96,8 +98,14 @@ onRecordUpdateRequest((e) => {
   e.record.set('dates', dates)
   if (lib.isUserAuth(e.auth)) {
     // ownership is immutable; refresh the denormalized identity fields
+    // (a guest's organizer name stays as chosen at creation)
     e.record.set('creator', e.record.original().getString('creator'))
-    e.record.set('creatorName', e.auth.getString('name'))
+    e.record.set(
+      'creatorName',
+      lib.isGuestAuth(e.auth)
+        ? e.record.original().getString('creatorName')
+        : e.auth.getString('name'),
+    )
     e.record.set('creatorEmail', e.auth.email())
   }
   e.next()
@@ -120,7 +128,7 @@ onRecordCreateRequest((e) => {
   if (lib.isUserAuth(e.auth)) {
     const avatars = require(`${__hooks}/lib/avatars.js`)
     e.record.set('submitter', e.auth.id)
-    e.record.set('submitterName', e.auth.getString('name'))
+    e.record.set('submitterName', lib.submitterNameFor(e.auth, event, e.record))
     e.record.set('submitterEmail', e.auth.email())
     e.record.set('submitterAvatarUrl', avatars.resolveAvatarUrl(e.auth))
   }
@@ -146,7 +154,7 @@ onRecordUpdateRequest((e) => {
   if (lib.isUserAuth(e.auth)) {
     const avatars = require(`${__hooks}/lib/avatars.js`)
     e.record.set('submitter', e.record.original().getString('submitter'))
-    e.record.set('submitterName', e.auth.getString('name'))
+    e.record.set('submitterName', lib.submitterNameFor(e.auth, event, e.record))
     e.record.set('submitterEmail', e.auth.email())
     e.record.set('submitterAvatarUrl', avatars.resolveAvatarUrl(e.auth))
   }

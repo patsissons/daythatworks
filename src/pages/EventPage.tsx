@@ -266,14 +266,19 @@ function RespondSection({
     (submission) => submission.submitter === user?.id,
   )
   const [selected, setSelected] = useState<string[]>(mine?.dates ?? [])
+  // guests name each response; default to this response's name, else the
+  // name they last used
   const [name, setName] = useState<string>(
-    user && isGuest ? ((user.name as string) ?? '') : '',
+    user && isGuest
+      ? (mine ? mine.submitterName : (user.name as string)) || ''
+      : '',
   )
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [savedId, setSavedId] = useState<string | null>(null)
 
-  // anonymous (hideNames) events never ask for a name
+  // anonymous (hideNames) events never ask for a name — guest responses
+  // there are always anonymous (the server enforces it)
   const needsName = (!user || isGuest) && !event.hideNames
   // only first-time guests must give a name; returning guests may clear it
   const requireName = needsName && !user
@@ -289,21 +294,23 @@ function RespondSection({
       if (!user) {
         // first-time guest: mint the persistent guest identity, then submit
         await loginAsGuest(name.trim())
-      } else if (needsName && name.trim() !== ((user.name as string) ?? '')) {
+      } else if (needsName && name.trim() && name.trim() !== user.name) {
+        // remember the latest name as the default for future forms; clearing
+        // one response's name leaves it alone
         await pb.collection('users').update(user.id, { name: name.trim() })
+      }
+      const fields = {
+        dates: JSON.stringify(selected),
+        ...(needsName && { submitterName: name.trim() }),
       }
       let id = mine?.id
       if (mine) {
-        await pb
-          .collection('submissions')
-          .update(mine.id, { dates: JSON.stringify(selected) })
+        await pb.collection('submissions').update(mine.id, fields)
       } else {
         id = newId()
-        await pb.collection('submissions').create({
-          id,
-          event: event.id,
-          dates: JSON.stringify(selected),
-        })
+        await pb
+          .collection('submissions')
+          .create({ id, event: event.id, ...fields })
       }
       setSavedId(id ?? null)
       await onSaved()
@@ -323,10 +330,11 @@ function RespondSection({
           {isWeekdayEvent(event)
             ? 'Tap every day of the week that usually works for you — unselected days count as unavailable.'
             : 'Tap every day that works for you — unselected days count as unavailable.'}
-          {!user &&
-            (event.hideNames
+          {!user
+            ? event.hideNames
               ? ' No account needed — your response is anonymous.'
-              : ' No account needed — just your name.')}
+              : ' No account needed — just your name.'
+            : isGuest && event.hideNames && ' Your response is anonymous.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
