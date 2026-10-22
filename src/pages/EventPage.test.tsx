@@ -209,6 +209,66 @@ describe('EventPage', () => {
     expect(update).not.toHaveBeenCalled()
   })
 
+  it('lets a returning guest clear their name back to Anonymous', async () => {
+    mockUser = {
+      id: 'user-guest',
+      guest: true,
+      name: 'Gus',
+    } as unknown as AuthRecord
+    update.mockResolvedValue({})
+    create.mockResolvedValue({})
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    const field = screen.getByLabelText('Your name')
+    expect(field).toHaveValue('Gus')
+    expect(field).not.toBeRequired()
+    expect(
+      screen.getByText(/Leave blank to respond as Anonymous/),
+    ).toBeVisible()
+    fireEvent.change(field, { target: { value: '  ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(update).toHaveBeenCalledWith('user-guest', { name: '' })
+    expect(update.mock.invocationCallOrder[0]).toBeLessThan(
+      create.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('lets a returning guest rename themselves', async () => {
+    mockUser = {
+      id: 'user-guest',
+      guest: true,
+      name: 'Gus',
+    } as unknown as AuthRecord
+    update.mockResolvedValue({})
+    create.mockResolvedValue({})
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    fireEvent.change(screen.getByLabelText('Your name'), {
+      target: { value: ' Augustus ' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(update).toHaveBeenCalledWith('user-guest', { name: 'Augustus' })
+  })
+
+  it('skips the user update when a returning guest keeps their name', async () => {
+    mockUser = {
+      id: 'user-guest',
+      guest: true,
+      name: 'Gus',
+    } as unknown as AuthRecord
+    create.mockResolvedValue({})
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(update).not.toHaveBeenCalled()
+  })
+
   it('shows a not-found card for unknown events', async () => {
     getFirstListItem.mockRejectedValue({ status: 404 })
     renderPage('/events/nope')

@@ -116,6 +116,24 @@ test('respond as a guest without an account', async ({ page }) => {
   ).toBeVisible()
   await expect(page.getByText(/E2E Guest/).first()).toBeVisible()
   await expect(page.getByText('guest', { exact: true })).toBeVisible()
+
+  // the returning guest can rename themselves
+  await page.getByLabel('Your name').fill('E2E Renamed')
+  await page.getByRole('button', { name: 'Update availability' }).click()
+  await expect(page.locator('header').getByText(/E2E Renamed/)).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'E2E Renamed', exact: true }),
+  ).toBeVisible()
+  await expect(page.getByText(/E2E Guest/)).toHaveCount(0)
+
+  // ...or clear their name entirely, leaving an anonymous response
+  await page.getByLabel('Your name').fill('')
+  await page.getByRole('button', { name: 'Update availability' }).click()
+  await expect(page.getByText(/names hidden/)).toBeVisible()
+  await expect(page.getByText(/E2E Renamed/)).toHaveCount(0)
+  await expect(
+    page.locator('header').getByText('guest', { exact: true }),
+  ).toBeVisible()
 })
 
 test('create an event as a guest without an account', async ({ page }) => {
@@ -207,5 +225,7 @@ test('anonymous events never ask responders for a name', async ({ page }) => {
   await expect(
     page.locator('header').getByText('guest', { exact: true }),
   ).toBeVisible()
-  await expect(page.locator('header').getByText('Guest')).toHaveCount(0)
+  await expect(
+    page.locator('header').getByText('Guest', { exact: true }),
+  ).toHaveCount(0)
 })

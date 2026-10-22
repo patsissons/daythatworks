@@ -275,9 +275,11 @@ function RespondSection({
 
   // anonymous (hideNames) events never ask for a name
   const needsName = (!user || isGuest) && !event.hideNames
+  // only first-time guests must give a name; returning guests may clear it
+  const requireName = needsName && !user
 
   async function save() {
-    if (needsName && !name.trim()) {
+    if (requireName && !name.trim()) {
       setError('Enter your name so the group knows who responded.')
       return
     }
@@ -287,7 +289,7 @@ function RespondSection({
       if (!user) {
         // first-time guest: mint the persistent guest identity, then submit
         await loginAsGuest(name.trim())
-      } else if (isGuest && name.trim() && name.trim() !== user.name) {
+      } else if (needsName && name.trim() !== ((user.name as string) ?? '')) {
         await pb.collection('users').update(user.id, { name: name.trim() })
       }
       let id = mine?.id
@@ -345,8 +347,13 @@ function RespondSection({
                 placeholder="Alex"
                 maxLength={100}
                 disabled={busy}
-                required
+                required={requireName}
               />
+              {user && (
+                <p className="text-muted-foreground text-sm">
+                  Leave blank to respond as Anonymous.
+                </p>
+              )}
             </div>
           )}
           <DateToggleChips
