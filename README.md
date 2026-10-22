@@ -124,6 +124,11 @@ pnpm build
 phio deploy
 ```
 
+Then restart the instance from the PocketHost dashboard if hooks or migrations
+changed — they register at boot, and phio only syncs files. CI deploys on
+pushes to `main` do this automatically by power cycling the instance after the
+sync.
+
 Your app is deployed at [https://daythatworks.com](https://daythatworks.com) (instance URL: [https://daythatworks.pockethost.io](https://daythatworks.pockethost.io)).
 
 ## Schema & types
