@@ -18,7 +18,8 @@ images can be uploaded or linked from an external URL (dragged, dropped, or
 pasted — links are verified in the browser before saving). Guest event creation is rate limited (sliding 24h window:
 5 per IP, 5 per guest, plus a global daily cap) to keep spam out; signed-in
 users are unlimited. Viewing needs no account. An event can hide responder
-names from the group (its responders aren't asked for a name at all), and emails are never exposed through the public API.
+names from the group (its responders aren't asked for a name at all, and its
+calendar results drop the responder panel), and emails are never exposed through the public API.
 
 Events can also poll **days of the week** instead of specific dates — handy
 for finding a regular slot like a weekly game night. The event form toggles

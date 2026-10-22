@@ -123,6 +123,23 @@ describe('AvailabilityHeatmap', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('omits the responder panel on hideNames events', () => {
+    render(
+      <AvailabilityHeatmap
+        result={aggregateAvailability(DATES, SUBMISSIONS)}
+        submissions={SUBMISSIONS}
+        hideNames
+      />,
+    )
+    expect(screen.queryByText(/Responses/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/names hidden/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ada Lovelace' }),
+    ).not.toBeInTheDocument()
+    // the heatmap itself still renders
+    expect(cell(/Sat, Aug 1 — 1 of 2 available/)).toBeInTheDocument()
+  })
+
   it('prompts when there are no responses', () => {
     renderHeatmap([])
     expect(screen.getByText('No responses yet.')).toBeInTheDocument()

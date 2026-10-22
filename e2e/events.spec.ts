@@ -197,7 +197,11 @@ test('a named guest organizer responds anonymously to a hidden-names event', asy
   await expect(
     page.getByRole('button', { name: 'Update availability' }),
   ).toBeVisible()
-  await expect(page.getByText(/names hidden/)).toBeVisible()
+  // hidden-names results show the heatmap only, with no Responses panel
+  await expect(
+    page.getByRole('button', { name: /1 of 1 available/ }).first(),
+  ).toBeVisible()
+  await expect(page.getByText(/Responses \(/)).toHaveCount(0)
 
   // ...while the event still credits them as organizer
   await expect(page.getByText(/Organized by E2E Host/)).toBeVisible()

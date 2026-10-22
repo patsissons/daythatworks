@@ -15,6 +15,8 @@ interface AvailabilityHeatmapProps {
   focusedSubmissionId?: string
   /** Dates render as month grids, weekdays as a single week strip. */
   kind?: EventKind
+  /** hideNames events show only the heatmap — no responder panel. */
+  hideNames?: boolean
 }
 
 type Hover =
@@ -45,6 +47,7 @@ export function AvailabilityHeatmap({
   submissions,
   focusedSubmissionId,
   kind = 'dates',
+  hideNames = false,
 }: AvailabilityHeatmapProps) {
   const [hover, setHover] = useState<Hover>(null)
 
@@ -212,64 +215,66 @@ export function AvailabilityHeatmap({
         </div>
       </div>
 
-      <div className="shrink-0 space-y-2 sm:w-44">
-        <h3 className="text-sm font-medium">Responses ({total})</h3>
-        {total === 0 ? (
-          <p className="text-muted-foreground text-sm">No responses yet.</p>
-        ) : anyNames ? (
-          <ul className="space-y-1">
-            {submissions.map((submission) => {
-              const availableOnHoveredDay =
-                hover?.kind === 'date' &&
-                byDate.get(hover.date)?.submissionIds.includes(submission.id)
-              const dimmed =
-                (hover?.kind === 'date' && !availableOnHoveredDay) ||
-                (hover?.kind === 'submission' && hover.id !== submission.id)
-              return (
-                <li key={submission.id}>
-                  <button
-                    type="button"
-                    onMouseEnter={() =>
-                      setHover({ kind: 'submission', id: submission.id })
-                    }
-                    onMouseLeave={() => setHover(null)}
-                    onFocus={() =>
-                      setHover({ kind: 'submission', id: submission.id })
-                    }
-                    onBlur={() => setHover(null)}
-                    className={cn(
-                      'flex w-full cursor-default items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm transition-opacity',
-                      dimmed && 'opacity-40',
-                      availableOnHoveredDay && 'font-medium',
-                    )}
-                  >
-                    <span
-                      aria-hidden
+      {!hideNames && (
+        <div className="shrink-0 space-y-2 sm:w-44">
+          <h3 className="text-sm font-medium">Responses ({total})</h3>
+          {total === 0 ? (
+            <p className="text-muted-foreground text-sm">No responses yet.</p>
+          ) : anyNames ? (
+            <ul className="space-y-1">
+              {submissions.map((submission) => {
+                const availableOnHoveredDay =
+                  hover?.kind === 'date' &&
+                  byDate.get(hover.date)?.submissionIds.includes(submission.id)
+                const dimmed =
+                  (hover?.kind === 'date' && !availableOnHoveredDay) ||
+                  (hover?.kind === 'submission' && hover.id !== submission.id)
+                return (
+                  <li key={submission.id}>
+                    <button
+                      type="button"
+                      onMouseEnter={() =>
+                        setHover({ kind: 'submission', id: submission.id })
+                      }
+                      onMouseLeave={() => setHover(null)}
+                      onFocus={() =>
+                        setHover({ kind: 'submission', id: submission.id })
+                      }
+                      onBlur={() => setHover(null)}
                       className={cn(
-                        'bg-secondary text-secondary-foreground grid size-6 shrink-0 place-items-center overflow-hidden rounded-full border text-[10px] font-medium',
-                        submission.id === focusedSubmissionId &&
-                          'ring-ring ring-2',
+                        'flex w-full cursor-default items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm transition-opacity',
+                        dimmed && 'opacity-40',
+                        availableOnHoveredDay && 'font-medium',
                       )}
                     >
-                      <AvatarFace
-                        name={submission.submitterName}
-                        avatarUrl={submission.submitterAvatarUrl}
-                      />
-                    </span>
-                    <span className="truncate">
-                      {submission.submitterName || 'Anonymous'}
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            {total} {total === 1 ? 'response' : 'responses'} (names hidden)
-          </p>
-        )}
-      </div>
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'bg-secondary text-secondary-foreground grid size-6 shrink-0 place-items-center overflow-hidden rounded-full border text-[10px] font-medium',
+                          submission.id === focusedSubmissionId &&
+                            'ring-ring ring-2',
+                        )}
+                      >
+                        <AvatarFace
+                          name={submission.submitterName}
+                          avatarUrl={submission.submitterAvatarUrl}
+                        />
+                      </span>
+                      <span className="truncate">
+                        {submission.submitterName || 'Anonymous'}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {total} {total === 1 ? 'response' : 'responses'} (names hidden)
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

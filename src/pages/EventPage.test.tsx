@@ -356,6 +356,24 @@ describe('EventPage', () => {
     expect(screen.getByText('2/2')).toBeInTheDocument()
   })
 
+  it('drops the Responses panel on hideNames events', async () => {
+    getFirstListItem.mockResolvedValue({ ...EVENT, hideNames: true })
+    getFullList.mockResolvedValue(
+      SUBMISSIONS.map((submission) => ({
+        ...submission,
+        submitterName: '',
+        submitterAvatarUrl: '',
+      })),
+    )
+    renderPage()
+    await screen.findByText('Summer BBQ')
+    expect(screen.queryByText(/Responses \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/names hidden/)).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Sun, Aug 2 — 2 of 2 available/ }),
+    ).toBeInTheDocument()
+  })
+
   it('polls days of the week on weekday events', async () => {
     mockUser = { id: 'user-new' } as AuthRecord
     create.mockResolvedValue({})
