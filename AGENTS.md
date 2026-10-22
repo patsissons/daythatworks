@@ -31,7 +31,7 @@ phio is the PocketHost CLI (`npm install -g phio tsx`; requires Node 24+ — phi
 - `phio logs` — stream instance logs.
 - Schema changes go in `pb_migrations/` (auto-run on instance restart). After schema changes, run `pnpm typegen` (needs `PB_TYPEGEN_URL`, `PB_TYPEGEN_EMAIL`, `PB_TYPEGEN_PASSWORD` env vars) and commit the regenerated types.
 - Secrets (OAuth client IDs, API keys) belong in the PocketHost dashboard (Secrets), surfaced to hooks/migrations via `$os.getenv(...)`. Never hardcode them.
-- CI deploys use `PHIO_USERNAME`, `PHIO_PASSWORD`, `PHIO_INSTANCE_NAME` env vars with `phio deploy`.
+- CI deploys (`.github/workflows/ci.yml`) use the `PHIO_USERNAME`/`PHIO_PASSWORD` secrets (plus `PHIO_DEPLOY_KEY`/`PHIO_DEPLOY_KEY_PUB` for phio's SFTP key) and the instance name from `.phioconfig`. After `phio deploy` they power cycle the instance through the PocketHost mothership API and wait for `/api/health`: phio only syncs files, and the instance's own restart on `pb_hooks` changes races the sync and can boot a mix of old and new hooks. A manual `phio deploy` has the same race — restart the instance from the PocketHost dashboard afterwards when hooks or migrations changed.
 
 ## Constraints
 
