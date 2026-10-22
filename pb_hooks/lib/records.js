@@ -79,6 +79,41 @@ function isUserAuth(auth) {
   return !!auth && auth.collection().name === 'users'
 }
 
+/** True when the request is authenticated as a guest user. */
+function isGuestAuth(auth) {
+  return isUserAuth(auth) && auth.getBool('guest')
+}
+
+/** A guest's self-asserted name for one record: trimmed, at most 100 chars. */
+function guestName(value) {
+  const name = String(value || '').trim()
+  if (name.length > 100) {
+    throw new BadRequestError('Names can be at most 100 characters.')
+  }
+  return name
+}
+
+/**
+ * The organizer name to stamp on a new event. Guests name each event
+ * themselves (the new-event form's name; their account name is only the
+ * form default); full accounts always show their account name.
+ */
+function creatorNameFor(auth, record) {
+  if (!isGuestAuth(auth)) return auth.getString('name')
+  return guestName(record.getString('creatorName'))
+}
+
+/**
+ * The responder name to stamp on a submission. Guests name each response
+ * themselves, except on hideNames events where guest responses are always
+ * anonymous; full accounts always show their account name.
+ */
+function submitterNameFor(auth, event, record) {
+  if (!isGuestAuth(auth)) return auth.getString('name')
+  if (event.getBool('hideNames')) return ''
+  return guestName(record.getString('submitterName'))
+}
+
 // Slugs with route-level meaning under /events/. Mirrored in
 // src/lib/slug.ts — src/lib/slug.test.ts keeps them in sync.
 const RESERVED_SLUGS = ['new', 'edit', 's']
@@ -95,6 +130,10 @@ module.exports = {
   isWeekdayKind,
   normalizeOptions,
   isUserAuth,
+  isGuestAuth,
+  guestName,
+  creatorNameFor,
+  submitterNameFor,
   RESERVED_SLUGS,
   isReservedSlug,
 }
