@@ -9,7 +9,8 @@ linking between days and responders) or a detailed list view. Events live at
 response has its own permalink at `/events/<slug-or-id>/s/<submission-id>`.
 No account is needed to create events or respond — just a name. Guests get
 a persistent identity kept in the browser so they can edit their events and
-responses (and can erase it any time via "Exit guest mode"); signing in
+responses, change or clear their name later (it updates on all their
+responses and events), and erase it any time via "Exit guest mode"; signing in
 (Google/GitHub OAuth) makes that history durable across browsers. Event
 images can be uploaded or linked from an external URL (dragged, dropped, or
 pasted — links are verified in the browser before saving). Guest event creation is rate limited (sliding 24h window:
