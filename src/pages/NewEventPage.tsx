@@ -21,6 +21,8 @@ export function NewEventPage() {
   usePageTitle('New event')
 
   const needsName = !user || isGuest
+  // only first-time guests must give a name; returning guests may clear it
+  const requireName = !user
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -34,7 +36,7 @@ export function NewEventPage() {
       <EventForm
         submitLabel="Create event"
         extraValidate={() => {
-          if (needsName && !name.trim()) {
+          if (requireName && !name.trim()) {
             return "Enter your name so people know who's organizing."
           }
           return null
@@ -43,7 +45,7 @@ export function NewEventPage() {
           if (!user) {
             // first-time guest: mint the persistent guest identity, then create
             await loginAsGuest(name.trim())
-          } else if (isGuest && name.trim() && name.trim() !== user.name) {
+          } else if (isGuest && name.trim() !== ((user.name as string) ?? '')) {
             await pb.collection('users').update(user.id, { name: name.trim() })
           }
           form.set('id', newId())
@@ -63,9 +65,10 @@ export function NewEventPage() {
               placeholder="Alex"
               maxLength={100}
               className="max-w-60"
-              required
+              required={requireName}
             />
             <p className="text-muted-foreground text-sm">
+              {user && 'Leave blank to stay anonymous. '}
               No account needed — your events are saved in this browser.{' '}
               <button
                 type="button"

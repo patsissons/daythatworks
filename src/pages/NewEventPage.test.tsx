@@ -5,6 +5,7 @@ import { ClientResponseError } from 'pocketbase'
 import { NewEventPage } from '@/pages/NewEventPage'
 
 const create = vi.fn()
+const update = vi.fn()
 const navigate = vi.fn()
 const loginAsGuest = vi.fn()
 
@@ -15,7 +16,7 @@ const auth = {
 
 vi.mock('@/lib/pocketbase', () => ({
   pb: {
-    collection: () => ({ create }),
+    collection: () => ({ create, update }),
     files: { getURL: () => '' },
   },
 }))
@@ -62,6 +63,7 @@ async function pickTwoDates() {
 describe('NewEventPage', () => {
   beforeEach(() => {
     create.mockReset()
+    update.mockReset()
     navigate.mockReset()
     loginAsGuest.mockReset()
     auth.user = { id: 'user1', name: 'Pat' }
@@ -159,6 +161,47 @@ describe('NewEventPage', () => {
     expect(loginAsGuest.mock.invocationCallOrder[0]).toBeLessThan(
       create.mock.invocationCallOrder[0],
     )
+  })
+
+  it('lets a returning guest clear their name', async () => {
+    auth.user = { id: 'guest1', name: 'Gus', guest: true }
+    auth.isGuest = true
+    update.mockResolvedValue({})
+    create.mockResolvedValue({ id: 'x'.repeat(26), slug: '' })
+    renderPage()
+    const field = screen.getByLabelText('Your name')
+    expect(field).toHaveValue('Gus')
+    expect(field).not.toBeRequired()
+    expect(screen.getByText(/Leave blank to stay anonymous/)).toBeVisible()
+    fireEvent.change(field, { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Summer BBQ' },
+    })
+    await pickTwoDates()
+    fireEvent.click(screen.getByRole('button', { name: 'Create event' }))
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(update).toHaveBeenCalledWith('guest1', { name: '' })
+    expect(loginAsGuest).not.toHaveBeenCalled()
+  })
+
+  it('lets a returning guest rename themselves', async () => {
+    auth.user = { id: 'guest1', name: 'Gus', guest: true }
+    auth.isGuest = true
+    update.mockResolvedValue({})
+    create.mockResolvedValue({ id: 'x'.repeat(26), slug: '' })
+    renderPage()
+    fireEvent.change(screen.getByLabelText('Your name'), {
+      target: { value: 'Augustus' },
+    })
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Summer BBQ' },
+    })
+    await pickTwoDates()
+    fireEvent.click(screen.getByRole('button', { name: 'Create event' }))
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    expect(update).toHaveBeenCalledWith('guest1', { name: 'Augustus' })
   })
 
   it('surfaces the server rate-limit message on 429', async () => {
