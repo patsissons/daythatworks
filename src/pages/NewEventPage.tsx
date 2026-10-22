@@ -45,10 +45,13 @@ export function NewEventPage() {
           if (!user) {
             // first-time guest: mint the persistent guest identity, then create
             await loginAsGuest(name.trim())
-          } else if (isGuest && name.trim() !== ((user.name as string) ?? '')) {
+          } else if (isGuest && name.trim() && name.trim() !== user.name) {
+            // remember the latest name as the default for future forms
             await pb.collection('users').update(user.id, { name: name.trim() })
           }
           form.set('id', newId())
+          // guests name each event they organize (ignored for full accounts)
+          if (needsName) form.set('creatorName', name.trim())
           const created = await pb
             .collection('events')
             .create<EventsRecord>(form)

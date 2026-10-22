@@ -101,6 +101,8 @@ describe('NewEventPage', () => {
     expect(form.get('slug')).toBe('summer-bbq')
     expect(JSON.parse(form.get('dates') as string)).toEqual(picked.sort())
     expect(form.get('hideNames')).toBe('false')
+    // full accounts always show their account name; nothing to send
+    expect(form.get('creatorName')).toBeNull()
     expect(navigate).toHaveBeenCalledWith('/events/summer-bbq')
   })
 
@@ -158,15 +160,17 @@ describe('NewEventPage', () => {
 
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     expect(loginAsGuest).toHaveBeenCalledWith('Alex')
+    expect((create.mock.calls[0][0] as FormData).get('creatorName')).toBe(
+      'Alex',
+    )
     expect(loginAsGuest.mock.invocationCallOrder[0]).toBeLessThan(
       create.mock.invocationCallOrder[0],
     )
   })
 
-  it('lets a returning guest clear their name', async () => {
+  it('lets a returning guest organize anonymously', async () => {
     auth.user = { id: 'guest1', name: 'Gus', guest: true }
     auth.isGuest = true
-    update.mockResolvedValue({})
     create.mockResolvedValue({ id: 'x'.repeat(26), slug: '' })
     renderPage()
     const field = screen.getByLabelText('Your name')
@@ -181,11 +185,14 @@ describe('NewEventPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create event' }))
 
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
-    expect(update).toHaveBeenCalledWith('guest1', { name: '' })
+    const form = create.mock.calls[0][0] as FormData
+    expect(form.get('creatorName')).toBe('')
+    // the guest's default name (and their response names) are untouched
+    expect(update).not.toHaveBeenCalled()
     expect(loginAsGuest).not.toHaveBeenCalled()
   })
 
-  it('lets a returning guest rename themselves', async () => {
+  it('saves a new organizer name on the event and as the default', async () => {
     auth.user = { id: 'guest1', name: 'Gus', guest: true }
     auth.isGuest = true
     update.mockResolvedValue({})
@@ -202,6 +209,8 @@ describe('NewEventPage', () => {
 
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     expect(update).toHaveBeenCalledWith('guest1', { name: 'Augustus' })
+    const form = create.mock.calls[0][0] as FormData
+    expect(form.get('creatorName')).toBe('Augustus')
   })
 
   it('surfaces the server rate-limit message on 429', async () => {

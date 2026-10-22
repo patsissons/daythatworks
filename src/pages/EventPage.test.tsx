@@ -53,6 +53,11 @@ const create = vi.fn()
 const update = vi.fn()
 const loginAsGuest = vi.fn()
 let mockUser: AuthRecord | null = null
+const GUEST = {
+  id: 'user-guest',
+  guest: true,
+  name: 'Gus',
+} as unknown as AuthRecord
 
 vi.mock('@/lib/pocketbase', () => ({
   pb: {
@@ -176,6 +181,7 @@ describe('EventPage', () => {
     expect(loginAsGuest).toHaveBeenCalledWith('Guest Gal')
     const payload = create.mock.calls[0][0] as Record<string, string>
     expect(JSON.parse(payload.dates)).toEqual(['2026-08-01'])
+    expect(payload.submitterName).toBe('Guest Gal')
   })
 
   it('skips the name field on anonymous events and saves a nameless guest', async () => {
@@ -190,32 +196,27 @@ describe('EventPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     expect(loginAsGuest).toHaveBeenCalledWith('')
+    expect(create.mock.calls[0][0]).not.toHaveProperty('submitterName')
   })
 
-  it('leaves a guest name untouched when responding anonymously', async () => {
+  it('keeps a named guest anonymous on anonymous events', async () => {
     getFirstListItem.mockResolvedValue({ ...EVENT, hideNames: true })
-    mockUser = {
-      id: 'user-guest',
-      guest: true,
-      name: 'Gus',
-    } as unknown as AuthRecord
+    mockUser = GUEST
     create.mockResolvedValue({})
     renderPage()
     await screen.findByText('Summer BBQ')
     expect(screen.queryByLabelText('Your name')).not.toBeInTheDocument()
+    expect(screen.getByText(/Your response is anonymous/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
+    // the server stamps guest responses on hideNames events as anonymous
+    expect(create.mock.calls[0][0]).not.toHaveProperty('submitterName')
     expect(update).not.toHaveBeenCalled()
   })
 
-  it('lets a returning guest clear their name back to Anonymous', async () => {
-    mockUser = {
-      id: 'user-guest',
-      guest: true,
-      name: 'Gus',
-    } as unknown as AuthRecord
-    update.mockResolvedValue({})
+  it('lets a returning guest leave one response anonymous', async () => {
+    mockUser = GUEST
     create.mockResolvedValue({})
     renderPage()
     await screen.findByText('Summer BBQ')
@@ -229,18 +230,13 @@ describe('EventPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
-    expect(update).toHaveBeenCalledWith('user-guest', { name: '' })
-    expect(update.mock.invocationCallOrder[0]).toBeLessThan(
-      create.mock.invocationCallOrder[0],
-    )
+    expect(create.mock.calls[0][0]).toMatchObject({ submitterName: '' })
+    // the guest's default name (and their organizer names) are untouched
+    expect(update).not.toHaveBeenCalled()
   })
 
-  it('lets a returning guest rename themselves', async () => {
-    mockUser = {
-      id: 'user-guest',
-      guest: true,
-      name: 'Gus',
-    } as unknown as AuthRecord
+  it('saves a new name on the response and as the default', async () => {
+    mockUser = GUEST
     update.mockResolvedValue({})
     create.mockResolvedValue({})
     renderPage()
@@ -252,21 +248,31 @@ describe('EventPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     expect(update).toHaveBeenCalledWith('user-guest', { name: 'Augustus' })
+    expect(create.mock.calls[0][0]).toMatchObject({ submitterName: 'Augustus' })
   })
 
-  it('skips the user update when a returning guest keeps their name', async () => {
-    mockUser = {
-      id: 'user-guest',
-      guest: true,
-      name: 'Gus',
-    } as unknown as AuthRecord
-    create.mockResolvedValue({})
+  it('prefills a returning guest with their existing response name', async () => {
+    mockUser = GUEST
+    getFullList.mockResolvedValue([
+      ...SUBMISSIONS,
+      {
+        ...SUBMISSIONS[0],
+        id: 'sub3'.padEnd(26, '0'),
+        submitter: 'user-guest',
+        submitterName: '',
+      },
+    ])
+    update.mockResolvedValue({})
     renderPage()
     await screen.findByText('Summer BBQ')
-    fireEvent.click(screen.getByRole('button', { name: 'Sat, Aug 1' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Save availability' }))
-    await waitFor(() => expect(create).toHaveBeenCalledTimes(1))
-    expect(update).not.toHaveBeenCalled()
+    // an anonymous response stays anonymous rather than refilling the default
+    expect(screen.getByLabelText('Your name')).toHaveValue('')
+    fireEvent.click(screen.getByRole('button', { name: 'Update availability' }))
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(1))
+    expect(update).toHaveBeenCalledWith('sub3'.padEnd(26, '0'), {
+      dates: JSON.stringify(['2026-08-02']),
+      submitterName: '',
+    })
   })
 
   it('shows a not-found card for unknown events', async () => {
