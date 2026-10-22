@@ -140,6 +140,23 @@ describe('AvailabilityHeatmap', () => {
     expect(cell(/Sat, Aug 1 — 1 of 2 available/)).toBeInTheDocument()
   })
 
+  it('centers the heatmap only when the responder panel is hidden', () => {
+    const { container, rerender } = renderHeatmap()
+    const layout = container.firstElementChild!
+    expect(layout).not.toHaveClass('sm:justify-center')
+    rerender(
+      <AvailabilityHeatmap
+        result={aggregateAvailability(DATES, SUBMISSIONS)}
+        submissions={SUBMISSIONS}
+        hideNames
+      />,
+    )
+    expect(layout).toHaveClass('items-center', 'sm:justify-center')
+    expect(screen.getByText('August 2026').closest('.flex-wrap')).toHaveClass(
+      'justify-center',
+    )
+  })
+
   it('prompts when there are no responses', () => {
     renderHeatmap([])
     expect(screen.getByText('No responses yet.')).toBeInTheDocument()

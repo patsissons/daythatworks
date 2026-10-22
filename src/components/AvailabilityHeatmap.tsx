@@ -156,10 +156,21 @@ export function AvailabilityHeatmap({
   }
 
   return (
-    <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+    <div
+      className={cn(
+        'flex flex-col gap-6 sm:flex-row sm:items-start',
+        // with no responder panel beside it, center the heatmap
+        hideNames && 'items-center sm:justify-center',
+      )}
+    >
       <div className="min-w-0 space-y-3">
         {kind === 'weekdays' ? (
-          <div className="w-fit rounded-lg border p-3">
+          <div
+            className={cn(
+              'w-fit rounded-lg border p-3',
+              hideNames && 'mx-auto',
+            )}
+          >
             <div className="grid grid-cols-7 gap-1">
               {WEEKDAYS.map((day) =>
                 renderCell(day, WEEKDAY_LABELS[day].short, 'w-10'),
@@ -167,7 +178,12 @@ export function AvailabilityHeatmap({
             </div>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-4">
+          <div
+            className={cn(
+              'flex flex-wrap gap-4',
+              hideNames && 'justify-center',
+            )}
+          >
             {months.map(({ year, month }) => (
               <div key={`${year}-${month}`} className="rounded-lg border p-3">
                 <p className="pb-2 text-center text-sm font-medium">
